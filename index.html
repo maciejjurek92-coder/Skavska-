@@ -1,53 +1,1316 @@
-SKAVSKA HALE
-KALKULATOR HAL
-Wycena — kalkulacja projektu
-KONSTRUKCJA — MASA × CENA/KG
-Stal główna [kg]
-Cena stali [zł/kg]
-Zetowniki / płatwie [kg]
-Cena Z [zł/kg]
-PŁYTA WARSTWOWA — M² × CENA/M²
-Ściany — suma formatów zakupowych płyt [m²]
-Cena płyty ściennej [zł/m²]
-Dach — suma formatów zakupowych płyt [m²]
-Cena płyty dachowej [zł/m²]
-Zasada materiałowa: ściany i dach są teraz liczone przez sumowanie formatów zakupowych każdej wygenerowanej płyty. Ściany obejmują boki i oba szczyty; dach jest liczony osobno. Docięcie nie zmniejsza formatu zakupowego — odpad pozostaje w wycenie. Otwór zmniejszy ilość dopiero wtedy, gdy faktycznie eliminuje pełną płytę z zamówienia.
-OBRÓBKI — MB × CENA/MB
-Obróbki [mb]
-Cena obróbki [zł/mb]
-MONTAŻ — KG × CENA/KG
-Masa do montażu [kg]
-Stawka montażu [zł/kg]
-POZOSTAŁE KOSZTY
-Transport [zł]
-Otwory / stolarka [zł]
-Łączniki / uszczelki / akcesoria [zł]
-Pozostałe [zł]
-CENA SPRZEDAŻY
-Marża [%]
-Rabat [%]
-VAT
-23%8%0%
-KOSZTORYS POZYCJI
-PODSUMOWANIE
-Zapisz rewizję
-Eksport oferty
-Docelowo ilości kg, m² i mb będą pobierane automatycznie z konstrukcji oraz BOM-u. Tutaj możesz już przetestować sam sposób liczenia i ceny jednostkowe.
-REWIZJE WYCENY
-Brak zapisanych rewizji.
-Model hali — podgląd do wyceny
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SKAVSKA — Konstrukcja 3D realistyczna v3</title>
+<style>
+:root{
+  --navy:#0f3d6e;--line:#dce4ec;--text:#15243a;--muted:#6b7b8c;
+  --bg:#f7f9fb;--panel:#fff
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+header{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 26px}
+.logo{font-weight:900;font-size:22px;color:#123f6c}.logo small{display:block;font-size:11px;letter-spacing:.8px}
+.steps{max-width:1540px;margin:16px auto 0;display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.step{padding:14px 18px;display:flex;gap:12px;align-items:center;border-right:1px solid #e6ebf0;cursor:pointer;user-select:none}.step:last-child{border-right:0}
+.step b{width:36px;height:36px;border-radius:50%;background:#edf1f5;display:grid;place-items:center}
+.step span{font-weight:800}.step small{display:block;color:var(--muted);font-weight:400;margin-top:3px}
+.step.active{background:var(--navy);color:#fff}.step.active b{background:#fff;color:var(--navy)}.step.active small{color:#fff}
+.wrap{max-width:1540px;margin:0 auto;padding:20px;display:grid;grid-template-columns:420px minmax(0,1fr);gap:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 5px 20px rgba(25,49,76,.05);overflow:hidden}
+.card h2{font-size:18px;margin:0;padding:18px 20px;border-bottom:1px solid var(--line)}
+.body{padding:20px}.stepPanel{display:none}.stepPanel.active{display:block}.navrow{display:flex;gap:8px;margin-top:14px}.navbtn{flex:1;border:0;border-radius:9px;padding:10px;font-weight:800;cursor:pointer}.primary{background:#0f3d6e;color:#fff}.secondary{background:#fff;color:#173d5e;border:1px solid #b9c8d5!important}
+.sec{font-size:11px;font-weight:800;color:#0b4e8a;text-transform:uppercase;letter-spacing:.6px;margin:18px 0 8px;padding-top:12px;border-top:1px solid #edf1f5}.sec:first-child{margin-top:0;border-top:0;padding-top:0}
+label{display:block;font-size:12px;font-weight:700;margin:8px 0 5px;color:#405267}
+input,select{width:100%;padding:10px 11px;border:1px solid #ccd8e3;border-radius:9px;background:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.viewerShell{position:relative;height:710px;border-radius:14px;overflow:hidden;background:linear-gradient(#d7e7f2 0 60%,#e7ecef 60% 100%);border:1px solid #dbe4ec}
+#viewer{width:100%;height:100%;display:block}
+.viewerInfo{position:absolute;top:14px;left:14px;background:rgba(255,255,255,.92);border:1px solid #dce4ec;border-radius:10px;padding:9px 11px;font-size:12px;color:#526678;backdrop-filter:blur(6px)}
+.viewBtns{position:absolute;right:14px;top:14px;display:flex;gap:6px}
+.viewBtns button{border:1px solid #cbd7e2;background:rgba(255,255,255,.94);color:#17486f;border-radius:8px;padding:7px 10px;font-weight:700;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fff}
+.kpi span{font-size:11px;color:var(--muted);display:block}.kpi strong{font-size:21px;color:#123f6c}
+.note{font-size:11px;color:#687b8b;line-height:1.45;margin-top:6px}
+#error{display:none;position:absolute;inset:0;align-items:center;justify-content:center;padding:30px;text-align:center;color:#7a2a2a;background:#fff}
+@media(max-width:900px){
+ .wrap{grid-template-columns:1fr;padding:12px}.steps{margin:10px 12px 0}.step:not(.active){display:none}
+ .viewerShell{height:460px}.kpis{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<header><div class="logo">SKAVSKA HALE<small>KALKULATOR HAL</small></div></header>
 
-Etap 3: otwory • na razie rozmieszczenie • przeciągnij = obrót • kółko = zoom
-Konstrukcja
-Obudowa
-3D
-Szczyt
-Bok
-Powierzchnia ścian
-—
-Powierzchnia dachu
-—
-RAL ścian
-—
-RAL dachu
-—
+<div class="steps">
+  <div class="step" data-step="1"><b>1</b><span>Hala<small>Konstrukcja i geometria</small></span></div>
+  <div class="step" data-step="2"><b>2</b><span>Obudowa<small>Ściany i dach</small></span></div>
+  <div class="step" data-step="3"><b>3</b><span>Otwory<small>Bramy, drzwi, okna</small></span></div>
+  <div class="step" data-step="4"><b>4</b><span>Dach i dodatki<small>Świetliki, rynny, klapy</small></span></div>
+  <div class="step" data-step="5"><b>5</b><span>Wycena<small>Podsumowanie kosztów</small></span></div>
+</div>
+
+<div class="wrap">
+<section class="card">
+<h2 id="leftTitle">Hala — konstrukcja i geometria</h2>
+<div class="body">
+<div class="stepPanel active" data-panel="1">
+<div class="sec">Geometria hali</div>
+<div class="grid2"><div><label>Szerokość [m]</label><input id="width" type="number" value="20" min="4" step="0.5"></div><div><label>Długość [m]</label><input id="length" type="number" value="50" min="5" step="0.5"></div></div>
+<div class="grid2"><div><label>Wysokość okapu [m]</label><input id="eaves" type="number" value="6" min="2" step="0.1"></div><div><label>Kąt dachu [°]</label><input id="angle" type="number" value="10" min="1" max="45" step="0.5"></div></div>
+<div class="grid2"><div><label>Rozstaw ram [m]</label><input id="spacing" type="number" value="5" min="2" step="0.5"></div><div><label>Typ konstrukcji</label><select id="constructionType"><option value="rolled" selected>Ramy z profili walcowanych</option><option value="truss">Kratownica</option></select></div></div>
+<label>Pas dolny kratownicy</label><select id="trussChord"><option value="horizontal" selected>Poziomy</option><option value="parallel">Równoległy do dachu</option></select>
+<input id="ridge" type="hidden">
+<div class="navrow"><button class="navbtn primary" data-next="2">Dalej — Obudowa</button></div>
+</div>
+
+<div class="stepPanel" data-panel="2">
+<div class="sec">Ściany</div>
+<div class="grid2"><div><label>Rodzaj</label><select id="wallType"><option value="sandwich" selected>Płyta warstwowa</option></select></div><div><label>Grubość [mm]</label><select id="wallThickness"><option>80</option><option selected>100</option><option>120</option><option>160</option></select></div></div>
+<div class="grid2"><div><label>Układ płyt</label><select id="wallDirection"><option value="horizontal" selected>Poziomy</option><option value="vertical">Pionowy</option></select></div><div><label>Moduł [mm]</label><select id="wallModule"><option value="1000" selected>1000</option><option value="1025">1025</option><option value="1100">1100</option></select></div></div>
+<div class="grid2"><div><label>RAL ścian</label><select id="wallRal"><option value="9002" selected>RAL 9002</option><option value="7016">RAL 7016</option><option value="9006">RAL 9006</option><option value="7024">RAL 7024</option></select></div><div><label>RAL dachu</label><select id="roofRal"><option value="7016" selected>RAL 7016</option><option value="9006">RAL 9006</option><option value="9002">RAL 9002</option></select></div></div>
+<div class="grid2"><div><label>Grubość dachu [mm]</label><select id="roofThickness"><option>80</option><option selected>100</option><option>120</option><option>160</option></select></div><div><label>Moduł dachu [mm]</label><select id="roofModule"><option value="1000" selected>1000</option><option value="1025">1025</option><option value="1100">1100</option></select></div></div>
+<input id="visualQuality" type="hidden" value="premium"><input id="roofType" type="hidden" value="sandwich">
+<div class="sec">Personalizacja płyt</div>
+<div class="grid2"><div><label>Tryb</label><select id="personalizeMode"><option value="off" selected>Wyłączony</option><option value="on">Włączony</option></select></div><div><label>RAL wybranych</label><select id="panelRal"><option value="7016" selected>RAL 7016</option><option value="9002">RAL 9002</option><option value="9006">RAL 9006</option><option value="3000">RAL 3000</option></select></div></div>
+<button id="applyPanelRal" type="button" class="navbtn primary" style="width:100%;margin-top:8px">Zastosuj RAL do zaznaczonych płyt</button>
+<div class="grid2" style="margin-top:8px"><button id="undoPanelRal" type="button" class="navbtn secondary">↶ Cofnij</button><button id="redoPanelRal" type="button" class="navbtn secondary">↷ Ponów</button></div>
+<button id="clearPanelSelection" type="button" class="navbtn secondary" style="width:100%;margin-top:8px">Wyczyść zaznaczenie</button><div id="selectedPanelText" class="note">Nie zaznaczono płyt.</div>
+<div class="sec">Obróbki</div>
+<div class="grid2"><div><label>Omega</label><select id="omegaMode"><option value="yes" selected>Tak</option><option value="no">Nie</option></select></div><div><label>RAL Ω</label><select id="omegaRal"><option value="7016" selected>RAL 7016</option><option value="9006">RAL 9006</option></select></div></div>
+<div class="grid2"><div><label>Narożniki</label><select id="cornerMode"><option value="yes" selected>Tak</option><option value="no">Nie</option></select></div><div><label>RAL</label><select id="cornerRal"><option value="7016" selected>RAL 7016</option><option value="9006">RAL 9006</option></select></div></div>
+<div class="grid2"><div><label>Wiatrownice</label><select id="windMode"><option value="yes" selected>Tak</option><option value="no">Nie</option></select></div><div><label>RAL</label><select id="windRal"><option value="7016" selected>RAL 7016</option><option value="9006">RAL 9006</option></select></div></div>
+<input id="ridgeTrimMode" type="hidden" value="yes"><input id="ridgeTrimRal" type="hidden" value="7016"><input id="eaveMode" type="hidden" value="yes"><input id="eaveRal" type="hidden" value="7016"><input id="baseTrimMode" type="hidden" value="yes"><input id="baseTrimRal" type="hidden" value="7016"><input id="plinthMode" type="hidden" value="yes"><input id="plinthRal" type="hidden" value="7016"><input id="windowTrimMode" type="hidden" value="yes"><input id="windowTrimRal" type="hidden" value="7016"><input id="doorTrimMode" type="hidden" value="yes"><input id="doorTrimRal" type="hidden" value="7016"><input id="gateTrimMode" type="hidden" value="yes"><input id="gateTrimRal" type="hidden" value="7016">
+<div class="navrow"><button class="navbtn secondary" data-prev="1">Wstecz</button><button class="navbtn primary" data-next="3">Dalej — Otwory</button></div>
+</div>
+
+<div class="stepPanel" data-panel="3">
+<div class="sec">Rozmieszczenie otworów</div>
+<label>Typ</label><select id="openingType"><option value="gate" selected>Brama</option><option value="door">Drzwi</option><option value="window">Okno</option></select>
+<label>Elewacja</label><select id="openingWall"><option value="left" selected>A — ściana podłużna</option><option value="front">B — szczyt</option><option value="right">C — ściana podłużna</option><option value="back">D — szczyt</option></select>
+<div class="grid2"><div><label>Szerokość [mm]</label><input id="openingWidth" type="number" value="4000"></div><div><label>Wysokość [mm]</label><input id="openingHeight" type="number" value="4000"></div></div>
+<label>Sposób rozmieszczenia</label><select id="openingPlacement"><option value="auto" selected>Automatycznie wg pól</option><option value="custom">Personalizuj w mm</option></select>
+<div id="sidePlacementBox"><label>Pole</label><select id="sideBay"></select></div>
+<div id="gablePlacementBox" style="display:none"><label>Szczyt</label><select id="gablePosition"><option value="center" selected>Centralnie</option><option value="bay">Pomiędzy polami</option></select><div id="gableBayBox" style="display:none"><label>Pole szczytowe</label><select id="gableBay"></select></div></div>
+<div id="customPlacementBox" style="display:none"><div class="grid2"><div><label>Od lewej [mm]</label><input id="openingOffset" type="number" value="1000"></div><div><label>Od posadzki [mm]</label><input id="openingSill" type="number" value="0"></div></div></div>
+<div id="windowOptions" style="display:none"><div class="sec">Okno</div><div class="grid2"><div><label>Parapet [mm]</label><input id="windowSill" type="number" value="1200"></div><div><label>Powtarzanie</label><select id="windowRepeat"><option value="single">Pojedyncze</option><option value="everyBay">W każdym polu</option></select></div></div><input id="windowType" type="hidden" value="fixed"></div>
+<button id="addOpening" type="button" class="navbtn primary" style="width:100%;margin-top:10px">+ Dodaj otwór</button><div class="sec">Dodane otwory</div><div id="openingList" style="display:grid;gap:8px"></div><div class="grid2"><button id="duplicateOpening" class="navbtn secondary">Duplikuj</button><button id="deleteOpening" class="navbtn secondary">Usuń</button></div>
+<div class="navrow"><button class="navbtn secondary" data-prev="2">Wstecz</button><button class="navbtn primary" data-next="4">Dalej — Dach i dodatki</button></div>
+</div>
+
+<div class="stepPanel" data-panel="4"><div class="sec">Dach i dodatki</div><div class="note">Ten etap zostawiamy do dalszego dopracowania: świetliki, rynny, klapy i dodatki dachowe.</div><div class="navrow"><button class="navbtn secondary" data-prev="3">Wstecz</button><button class="navbtn primary" data-next="5">Dalej — Wycena</button></div></div>
+
+<div class="stepPanel" data-panel="5">
+<div class="sec">Konstrukcja — kg × cena/kg</div><div class="grid2"><div><label>Stal [kg]</label><input id="qtySteelKg" type="number" value="125000"></div><div><label>Cena [zł/kg]</label><input id="priceSteelKg" type="number" value="8" step="0.1"></div></div><div class="grid2"><div><label>Zetowniki [kg]</label><input id="qtyZKg" type="number" value="5000"></div><div><label>Cena Z [zł/kg]</label><input id="priceZKg" type="number" value="5" step="0.1"></div></div>
+<div class="sec">Płyty</div><div class="grid2"><div><label>Ściany [m²]</label><input id="qtyWallM2" type="number" value="0" readonly></div><div><label>Cena ścian [zł/m²]</label><input id="priceWallM2" type="number" value="145"></div></div><div class="grid2"><div><label>Dach [m²]</label><input id="qtyRoofM2" type="number" value="0" readonly></div><div><label>Cena dachu [zł/m²]</label><input id="priceRoofM2" type="number" value="175"></div></div>
+<div class="sec">Obróbki i montaż</div><div class="grid2"><div><label>Obróbki [mb]</label><input id="qtyTrimMb" type="number" value="310"></div><div><label>Cena [zł/mb]</label><input id="priceTrimMb" type="number" value="42"></div></div><div class="grid2"><div><label>Montaż [kg]</label><input id="qtyAssemblyKg" type="number" value="130000"></div><div><label>Stawka [zł/kg]</label><input id="priceAssemblyKg" type="number" value="2.8"></div></div>
+<div class="sec">Pozostałe</div><div class="grid2"><div><label>Transport [zł]</label><input id="costTransport" type="number" value="12000"></div><div><label>Stolarka [zł]</label><input id="costOpenings" type="number" value="25000"></div></div><div class="grid2"><div><label>Akcesoria [zł]</label><input id="costAccessories" type="number" value="10000"></div><div><label>Pozostałe [zł]</label><input id="costOther" type="number" value="5000"></div></div>
+<div class="sec">Sprzedaż</div><div class="grid2"><div><label>Marża [%]</label><input id="marginPct" type="number" value="20"></div><div><label>Rabat [%]</label><input id="discountPct" type="number" value="0"></div></div><label>VAT</label><select id="vatPct"><option value="23" selected>23%</option><option value="8">8%</option><option value="0">0%</option></select>
+<div class="sec">Kosztorys</div><div id="pricingLines"></div><div class="sec">Podsumowanie</div><div id="pricingSummary"></div><div class="grid2" style="margin-top:10px"><button id="saveQuoteRevision" class="navbtn primary">Zapisz rewizję</button><button id="exportQuote" class="navbtn secondary">Eksport</button></div><div id="quoteRevisions" class="note"></div><div class="navrow"><button class="navbtn secondary" data-prev="4">Wstecz</button></div>
+</div>
+</div></section>
+
+<main class="card">
+<h2 id="rightTitle">Model hali — konstrukcja 3D</h2>
+<div class="body">
+  <div class="viewerShell" id="viewerShell">
+    <canvas id="viewer"></canvas>
+<div id="runtimeError" style="display:none;position:absolute;inset:20px;align-items:center;justify-content:center;background:#fff6f6;color:#8a1f1f;border:1px solid #e6bcbc;border-radius:12px;padding:20px;font-weight:700;z-index:20">
+Wystąpił błąd modelu 3D. Szczegóły błędu pojawią się tutaj.
+</div>
+    <div class="viewerInfo" id="viewerInfo">Etap 1: konstrukcja i geometria • przeciągnij = obrót • kółko = zoom</div>
+<div style="position:absolute;left:14px;bottom:14px;display:flex;gap:6px">
+  <button id="modeSteel" style="border:1px solid #cbd7e2;background:rgba(255,255,255,.94);color:#17486f;border-radius:8px;padding:7px 10px;font-weight:700">Konstrukcja</button>
+  <button id="modeClient" style="border:1px solid #cbd7e2;background:#0f3d6e;color:#fff;border-radius:8px;padding:7px 10px;font-weight:700">Obudowa</button>
+</div>
+    <div class="viewBtns">
+      <button onclick="setCameraView('iso')">3D</button>
+      <button onclick="setCameraView('front')">Szczyt</button>
+      <button onclick="setCameraView('side')">Bok</button>
+    </div>
+    <div id="error">Nie udało się załadować silnika 3D. Otwórz plik przy połączeniu z internetem albo w wersji online na GitHub Pages.</div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><span>Powierzchnia ścian</span><strong id="framesOut">—</strong></div>
+    <div class="kpi"><span>Powierzchnia dachu</span><strong id="spacingOut">—</strong></div>
+    <div class="kpi"><span>RAL ścian</span><strong id="lastOut">—</strong></div>
+    <div class="kpi"><span>RAL dachu</span><strong id="ridgeOut">—</strong></div>
+  </div>
+<div id="panelInfo" class="note" style="display:none;margin-top:10px"></div>
+</div>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+
+window.addEventListener('error', function(){
+  const er=document.getElementById('runtimeError');
+  if(er) er.style.display='flex';
+});
+
+if(!window.THREE){
+  document.getElementById('error').style.display='flex';
+  return;
+}
+const $=id=>document.getElementById(id);
+const n=id=>parseFloat($(id).value)||0;
+
+const renderer=new THREE.WebGLRenderer({canvas:$('viewer'),antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=.92;
+renderer.physicallyCorrectLights=true;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0xe7f0f6);
+scene.fog=new THREE.Fog(0xe7f0f6,70,190);
+
+const camera=new THREE.PerspectiveCamera(38,1,.1,500);
+camera.position.set(36,22,42);
+
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;
+controls.dampingFactor=.07;
+controls.minDistance=8;
+controls.maxDistance=150;
+controls.maxPolarAngle=Math.PI*.49;
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x7e8b93,2.2));
+const sun=new THREE.DirectionalLight(0xffffff,5.0);
+sun.position.set(30,40,20);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-80;sun.shadow.camera.right=80;sun.shadow.camera.top=80;sun.shadow.camera.bottom=-80;
+scene.add(sun);
+
+const floor=new THREE.Mesh(
+  new THREE.PlaneGeometry(220,220),
+  new THREE.MeshStandardMaterial({color:0xd4d8da,roughness:.98,metalness:0})
+);
+floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+
+const grid=new THREE.GridHelper(220,110,0x9eabb4,0xc8d0d4);
+grid.position.y=.012;grid.material.opacity=.14;grid.material.transparent=true;scene.add(grid);
+
+const slabMat=new THREE.MeshStandardMaterial({color:0xc9ced1,roughness:.96,metalness:0});
+const slab=new THREE.Mesh(new THREE.BoxGeometry(60,.18,92),slabMat);
+slab.position.y=.09;slab.receiveShadow=true;scene.add(slab);
+
+const hall=new THREE.Group();scene.add(hall);
+
+const matSteel=new THREE.MeshStandardMaterial({color:0x596c78,metalness:.94,roughness:.17});
+const matSteelDark=new THREE.MeshStandardMaterial({color:0x304754,metalness:.96,roughness:.15});
+const matSecondary=new THREE.MeshStandardMaterial({color:0x7f909c,metalness:.76,roughness:.30});
+const matBlue=new THREE.MeshStandardMaterial({color:0x176da8,metalness:.58,roughness:.34});
+const matSelected=new THREE.MeshStandardMaterial({color:0xf3a62b,metalness:.55,roughness:.34});
+const matConcrete=new THREE.MeshStandardMaterial({color:0xbfc5c8,roughness:.96,metalness:0});
+const matBolt=new THREE.MeshStandardMaterial({color:0x1f2d36,metalness:.95,roughness:.18});
+let clientMode=true;
+const claddingSelectable=[];
+const panelOverrides=new Map();
+let selectedPanel=null;
+let selectedPanelOriginalMaterial=null;
+const selectedPanels=new Set();
+const panelHistory=[];
+const panelRedo=[];
+
+const selectable=[];
+
+function clearHall(){
+  selectable.length=0;
+  claddingSelectable.length=0;
+  selectedPanel=null;
+  selectedPanelOriginalMaterial=null;
+  selectedPanels.clear();
+  while(hall.children.length){
+    const o=hall.children.pop();
+    o.traverse(x=>{
+      if(x.geometry)x.geometry.dispose();
+    });
+  }
+}
+
+function orientAlongZ(obj,a,b){
+  const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b);
+  const dir=B.clone().sub(A);
+  obj.position.copy(A.clone().add(B).multiplyScalar(.5));
+  obj.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),dir.clone().normalize());
+  return dir.length();
+}
+
+function boxMember(a,b,w=.12,h=.12,mat=matSecondary,name='Element'){
+  const len=new THREE.Vector3(...a).distanceTo(new THREE.Vector3(...b));
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,len),mat);
+  orientAlongZ(mesh,a,b);
+  mesh.castShadow=true;mesh.receiveShadow=true;
+  mesh.userData.label=name;
+  hall.add(mesh);selectable.push(mesh);
+  return mesh;
+}
+
+function iMember(a,b,depth=.38,flange=.22,web=.055,flangeT=.045,mat=matSteelDark,name='Profil dwuteowy'){
+  const len=new THREE.Vector3(...a).distanceTo(new THREE.Vector3(...b));
+  const g=new THREE.Group();
+  // Local member axis = Z; section depth = Y; flange width = X
+  const top=new THREE.Mesh(new THREE.BoxGeometry(flange,flangeT,len),mat);
+  top.position.y=(depth-flangeT)/2;
+  const bot=new THREE.Mesh(new THREE.BoxGeometry(flange,flangeT,len),mat);
+  bot.position.y=-(depth-flangeT)/2;
+  const webm=new THREE.Mesh(new THREE.BoxGeometry(web,depth-2*flangeT,len),mat);
+  [top,bot,webm].forEach(m=>{m.castShadow=true;m.receiveShadow=true;g.add(m); selectable.push(m);m.userData.label=name;});
+  orientAlongZ(g,a,b);
+  hall.add(g);
+  return g;
+}
+
+function basePlate(x,z){
+  const footing=new THREE.Mesh(new THREE.BoxGeometry(1.25,.32,1.25),matConcrete);
+  footing.position.set(x,-.16,z);footing.castShadow=true;footing.receiveShadow=true;hall.add(footing);
+
+  const p=new THREE.Mesh(new THREE.BoxGeometry(.78,.09,.78),matSteelDark);
+  p.position.set(x,.045,z);p.castShadow=true;p.receiveShadow=true;hall.add(p);
+
+  const boltGeo=new THREE.CylinderGeometry(.035,.035,.13,12);
+  for(const sx of [-.24,.24]) for(const sz of [-.24,.24]){
+    const b=new THREE.Mesh(boltGeo,matBolt);
+    b.position.set(x+sx,.11,z+sz);b.castShadow=true;hall.add(b);
+  }
+}
+function column(x,z,H){
+  iMember([x,0,z],[x,H,z],.46,.28,.065,.055,matSteelDark,'Słup dwuteowy');
+  basePlate(x,z);
+}
+
+function haunch(x,z,H,side){
+  const h=new THREE.Mesh(new THREE.BoxGeometry(.24,.60,.62),matSteelDark);
+  h.position.set(x + side*.12,H-.22,z);
+  h.rotation.z=side*0.18;
+  h.castShadow=true;hall.add(h);
+}
+function gusset(x,y,z,scale=1){
+  const g=new THREE.Mesh(new THREE.BoxGeometry(.34*scale,.28*scale,.055),matSteelDark);
+  g.position.set(x,y,z);g.castShadow=true;hall.add(g);
+}
+
+function kneeConnection(x,z,H,side){
+  const plate=new THREE.Mesh(new THREE.BoxGeometry(.42,.82,.075),matSteelDark);
+  plate.position.set(x + side*.10,H+.02,z);
+  plate.rotation.z=side*.10;
+  plate.castShadow=true;hall.add(plate);
+
+  const boltGeo=new THREE.CylinderGeometry(.028,.028,.11,12);
+  boltGeo.rotateX(Math.PI/2);
+  for(const yy of [-.23,.23]){
+    for(const xx of [-.10,.10]){
+      const b=new THREE.Mesh(boltGeo,matBolt);
+      b.position.set(x+side*(.13+xx),H+yy,z+.055);
+      b.castShadow=true;hall.add(b);
+    }
+  }
+}
+function ridgeSplice(y,z){
+  const p1=new THREE.Mesh(new THREE.BoxGeometry(.52,.38,.075),matSteelDark);
+  p1.position.set(0,y-.02,z);p1.castShadow=true;hall.add(p1);
+  const boltGeo=new THREE.CylinderGeometry(.026,.026,.11,12);
+  boltGeo.rotateX(Math.PI/2);
+  for(const x of [-.15,.15]) for(const yy of [-.10,.10]){
+    const b=new THREE.Mesh(boltGeo,matBolt);
+    b.position.set(x,y+yy,z+.055);b.castShadow=true;hall.add(b);
+  }
+}
+function rolledFrame(z,W,H,rise){
+  const xL=-W/2,xR=W/2,R=[0,H+rise,z];
+  column(xL,z,H);column(xR,z,H);
+  iMember([xL,H,z],R,.42,.26,.06,.05,matSteelDark,'Dźwigar dwuteowy');
+  iMember(R,[xR,H,z],.42,.26,.06,.05,matSteelDark,'Dźwigar dwuteowy');
+  haunch(xL,z,H,1);haunch(xR,z,H,-1);
+  kneeConnection(xL,z,H,1);kneeConnection(xR,z,H,-1);
+  ridgeSplice(H+rise,z);
+}
+
+function trussFrame(z,W,H,rise,chord){
+  const xL=-W/2,xR=W/2;
+  column(xL,z,H);column(xR,z,H);
+  const nodes=8,top=[],bot=[];
+  for(let i=0;i<=nodes;i++){
+    const x=xL+W*i/nodes;
+    const yt=H+rise*(1-Math.abs(x)/(W/2));
+    top.push([x,yt,z]);
+    const yb=chord==='horizontal'?H-.35:yt-.85;
+    bot.push([x,yb,z]);
+  }
+  for(let i=0;i<nodes;i++){
+    boxMember(top[i],top[i+1],.16,.16,matSteelDark,'Pas górny kratownicy');
+    boxMember(bot[i],bot[i+1],.13,.13,matBlue,'Pas dolny kratownicy');
+    if(i%2===0) boxMember(top[i],bot[i+1],.10,.10,matBlue,'Krzyżulec');
+    else boxMember(bot[i],top[i+1],.10,.10,matBlue,'Krzyżulec');
+  }
+  top.forEach(p=>gusset(p[0],p[1],p[2],.75));
+  bot.forEach(p=>gusset(p[0],p[1],p[2],.60));
+}
+
+
+function ralHex(code){
+  const map={'9002':0xe8e4d8,'9010':0xf3f1e8,'7016':0x383e42,'9006':0xa7aaab,'7024':0x45494d,'3000':0xa72920};
+  return map[code]||0xe8e4d8;
+}
+function makePanelMaterial(code){
+  return new THREE.MeshStandardMaterial({color:ralHex(code),roughness:.50,metalness:.10,side:THREE.DoubleSide});
+}
+function setPanelMeta(mesh,meta){
+  mesh.userData=Object.assign({type:'panel'},meta);
+  claddingSelectable.push(mesh);
+}
+function restoreSelectedPanel(){
+  if(selectedPanel && selectedPanel.material && selectedPanel.material.emissive){
+    selectedPanel.material.emissive.setHex(0x000000);
+    selectedPanel.material.emissiveIntensity=0;
+    selectedPanel.material.needsUpdate=true;
+  }
+  selectedPanel=null;
+  selectedPanelOriginalMaterial=null;
+}
+
+function refreshPanelSelectionUI(){
+  const t=document.getElementById('selectedPanelText');
+  if(t) t.textContent=selectedPanels.size
+    ? `Zaznaczono płyt: ${selectedPanels.size}`
+    : 'Nie zaznaczono płyt.';
+}
+
+function snapshotOverrides(){
+  return new Map(panelOverrides);
+}
+
+function panelDefaultRal(p){
+  return p?.userData?.id?.startsWith('ROOF_')
+    ? ($('roofRal')?.value||'7016')
+    : ($('wallRal')?.value||'9002');
+}
+
+function setPlateColorInPlace(p,code){
+  if(!p || !p.material) return;
+  if(p.material.color) p.material.color.setHex(ralHex(code));
+  if(p.material.emissive){
+    p.material.emissive.setHex(0x000000);
+    p.material.emissiveIntensity=0;
+  }
+  p.material.needsUpdate=true;
+}
+
+function restoreOverrides(snap){
+  panelOverrides.clear();
+  snap.forEach((v,k)=>panelOverrides.set(k,v));
+
+  claddingSelectable.forEach(p=>{
+    if(!p || !p.userData || p.userData.type!=='panel') return;
+    const code=panelOverrides.get(p.userData.id) || panelDefaultRal(p);
+    setPlateColorInPlace(p,code);
+  });
+
+  selectedPanels.clear();
+  refreshPanelSelectionUI();
+  const er=document.getElementById('runtimeError');
+  if(er) er.style.display='none';
+}
+
+function addClientShell(W,L,H,rise,z0){
+  const plinthMat=new THREE.MeshStandardMaterial({color:0xb7bdc0,roughness:.94,metalness:0});
+  const plinth=new THREE.Mesh(new THREE.BoxGeometry(W+.7,.18,L+.7),plinthMat);
+  plinth.position.set(0,.09,z0+L/2);plinth.receiveShadow=true;hall.add(plinth);
+  const apronMat=new THREE.MeshStandardMaterial({color:0xc9ccca,roughness:.96,metalness:0});
+  const apron=new THREE.Mesh(new THREE.BoxGeometry(W+5,.045,L+7),apronMat);
+  apron.position.set(0,.02,z0+L/2);apron.receiveShadow=true;hall.add(apron);
+  const ralColors={'9002':0xe8e4d8,'9010':0xf3f1e8,'7016':0x383e42,'9006':0xa7aaab,'7024':0x45494d};
+  const wc=ralHex($('wallRal')?.value||'9002');
+  const rc=ralColors[$('roofRal')?.value]||0x383e42;
+  const omegaColor=ralColors[$('omegaRal')?.value]||0x383e42;
+  const cornerColor=ralColors[$('cornerRal')?.value]||0x383e42;
+  const windColor=ralColors[$('windRal')?.value]||0x383e42;
+  const ridgeTrimColor=ralColors[$('ridgeTrimRal')?.value]||0x383e42;
+  const eaveColor=ralColors[$('eaveRal')?.value]||0x383e42;
+  const baseTrimColor=ralColors[$('baseTrimRal')?.value]||0x383e42;
+
+  const wallMat=new THREE.MeshStandardMaterial({color:wc,roughness:.46,metalness:.12,side:THREE.DoubleSide});
+  const roofMat=new THREE.MeshStandardMaterial({color:rc,roughness:.34,metalness:.34,side:THREE.DoubleSide});
+  const seamMatWall=new THREE.LineBasicMaterial({color:wc===0x383e42?0x1f2326:0x8d969b,transparent:true,opacity:.38});
+  const seamMatRoof=new THREE.LineBasicMaterial({color:0x5e666b,transparent:true,opacity:.45});
+
+  const z1=z0, z2=z0+L;
+  const xL=-W/2, xR=W/2, ridgeY=H+rise;
+
+  // REAL INDIVIDUAL PANELS — the visible shadow grid IS the clickable plate grid.
+  const S=Math.max(parseFloat($('spacing')?.value)||5,.5);
+  const axes=[0];
+  for(let p=S;p<L-.001;p+=S) axes.push(p);
+  if(Math.abs(axes[axes.length-1]-L)>.001) axes.push(L);
+
+  const assemblyGap=.030;      // 30 mm at vertical frame-axis joint, under Ω
+  const visualJoint=.018;      // 18 mm dark lock/joint between individual plates
+  const moduleM=(parseFloat($('wallModule')?.value)||1000)/1000;
+  const wallDir=$('wallDirection')?.value||'vertical';
+  const edgeShadowMat=new THREE.MeshStandardMaterial({color:0x15191c,roughness:.86,metalness:.01});
+
+  for(const x of [xL-.055,xR+.055]){
+    const sideKey=x<0?'L':'R';
+
+    if(wallDir==='horizontal'){
+      // Horizontal sandwich panels: one physical plate = one frame bay × selected plate height.
+      // This restores the strong horizontal shadowing from the earlier version,
+      // but now every field between shadows is a real clickable object.
+      for(let bi=0;bi<axes.length-1;bi++){
+        const rawLen=axes[bi+1]-axes[bi];
+        const panelLen=Math.max(.05,rawLen-assemblyGap);
+        const zc=z0+(axes[bi]+axes[bi+1])/2;
+        let y0=0, row=0;
+        while(y0 < H-.001){
+          const rawH=Math.min(moduleM,H-y0);
+          const ph=Math.max(.03,rawH-visualJoint);
+          const yc=y0+rawH/2;
+          const panelId=`SIDE_${sideKey}_B${bi}_R${row}`;
+          const mat=makePanelMaterial(panelOverrides.get(panelId)||$('wallRal').value);
+          const p=new THREE.Mesh(new THREE.BoxGeometry(.10,ph,panelLen),mat);
+          p.position.set(x,yc,zc);p.castShadow=true;p.receiveShadow=true;
+          setPanelMeta(p,{
+            id:panelId,label:`Płyta boczna ${bi+1}.${row+1}`,
+            widthMM:Math.round(panelLen*1000),heightMM:Math.round(ph*1000),
+            grossWidthMM:Math.round(rawLen*1000),grossHeightMM:Math.round(rawH*1000),
+            gapMM:30,purchaseWidthMM:Math.round(rawLen*1000),purchaseHeightMM:Math.round(rawH*1000)
+          });
+          hall.add(p);
+          if(y0>0){
+            const sh=new THREE.Mesh(new THREE.BoxGeometry(.014,visualJoint,panelLen+.01),edgeShadowMat);
+            sh.position.set(x-.006,y0,zc);sh.castShadow=true;hall.add(sh);
+          }
+          y0+=rawH;row++;
+        }
+      }
+    }else{
+      // Vertical arrangement: individual vertical strips of selected module width.
+      // Frame-axis 30 mm joints remain dominant and receive Ω.
+      let zLocal=0, col=0;
+      while(zLocal<L-.001){
+        const rawW=Math.min(moduleM,L-zLocal);
+        const pw=Math.max(.03,rawW-visualJoint);
+        const zc=z0+zLocal+rawW/2;
+        const panelId=`SIDE_${sideKey}_C${col}`;
+        const mat=makePanelMaterial(panelOverrides.get(panelId)||$('wallRal').value);
+        const p=new THREE.Mesh(new THREE.BoxGeometry(.10,H,pw),mat);
+        p.position.set(x,H/2,zc);p.castShadow=true;p.receiveShadow=true;
+        setPanelMeta(p,{
+          id:panelId,label:`Płyta boczna ${col+1}`,
+          widthMM:Math.round(pw*1000),heightMM:Math.round(H*1000),
+          grossWidthMM:Math.round(rawW*1000),gapMM:18,
+          purchaseWidthMM:Math.round(rawW*1000),purchaseHeightMM:Math.round(H*1000)
+        });
+        hall.add(p);
+        if(zLocal>0){
+          const sh=new THREE.Mesh(new THREE.BoxGeometry(.014,H,visualJoint),edgeShadowMat);
+          sh.position.set(x-.006,H/2,z0+zLocal);sh.castShadow=true;hall.add(sh);
+        }
+        zLocal+=rawW;col++;
+      }
+    }
+  }
+
+  // Sandwich-panel microprofiling: actual shallow 3D ribs so light creates real highlights/shadows.
+  if(($('wallType')?.value||'sandwich')==='sandwich'){
+    const dir=$('wallDirection')?.value||'vertical';
+    const ribMat=new THREE.MeshStandardMaterial({color:wc,roughness:.44,metalness:.14});
+    if(dir==='horizontal'){
+      // Horizontal panels: fine horizontal micro-wave over the full facade.
+      for(let y=.07;y<H-.04;y+=.075){
+        for(const x of [xL-.066,xR+.066]){
+          const ribGeo=new THREE.CylinderGeometry(.006,.006,L,8);
+          ribGeo.rotateX(Math.PI/2);
+          const rib=new THREE.Mesh(ribGeo,ribMat);
+          rib.position.set(x,y,z0+L/2);rib.castShadow=true;hall.add(rib);
+        }
+      }
+    }else{
+      // Vertical arrangement: micro-wave runs vertically.
+      for(let z=z1+.07;z<z2-.04;z+=.075){
+        for(const x of [xL-.066,xR+.066]){
+          const ribGeo=new THREE.CylinderGeometry(.006,.006,H,8);
+          const rib=new THREE.Mesh(ribGeo,ribMat);
+          rib.position.set(x,H/2,z);rib.castShadow=true;hall.add(rib);
+        }
+      }
+    }
+  }
+
+  // Gable walls (front/back): rectangle + triangle.
+  for(const zz of [z1,z2]){
+    const rect=new THREE.Mesh(new THREE.PlaneGeometry(W,H),wallMat.clone());
+    rect.position.set(0,H/2,zz);
+    if(zz===z2) rect.rotation.y=Math.PI;
+    rect.castShadow=true;rect.receiveShadow=true;hall.add(rect);
+
+    const shape=new THREE.Shape();
+    shape.moveTo(-W/2,0);shape.lineTo(0,rise);shape.lineTo(W/2,0);shape.closePath();
+    const tri=new THREE.Mesh(new THREE.ShapeGeometry(shape),wallMat.clone());
+    tri.position.set(0,H,zz+(zz===z1?-0.001:0.001));
+    if(zz===z2) tri.rotation.y=Math.PI;
+    tri.castShadow=true;tri.receiveShadow=true;hall.add(tri);
+  }
+
+  // The same fine micro-wave continues across both gable walls, including the triangular top.
+  if(($('wallType')?.value||'sandwich')==='sandwich'){
+    const gRibMat=new THREE.MeshStandardMaterial({color:wc,roughness:.44,metalness:.14});
+    const dir=$('wallDirection')?.value||'vertical';
+    if(dir==='horizontal'){
+      for(let y=.07;y<ridgeY-.03;y+=.075){
+        const halfAtY=y<=H?W/2:Math.max(0,(W/2)*(1-(y-H)/rise));
+        if(halfAtY<=.01)continue;
+        for(const zz of [z1-.066,z2+.066]){
+          const rib=new THREE.Mesh(new THREE.BoxGeometry(halfAtY*2,.012,.012),gRibMat);
+          rib.position.set(0,y,zz);rib.castShadow=true;hall.add(rib);
+        }
+      }
+    }else{
+      for(let x=xL+.07;x<xR-.03;x+=.075){
+        const topY=H+rise*(1-Math.abs(x)/(W/2));
+        for(const zz of [z1-.066,z2+.066]){
+          const rib=new THREE.Mesh(new THREE.BoxGeometry(.012,topY,.012),gRibMat);
+          rib.position.set(x,topY/2,zz);rib.castShadow=true;hall.add(rib);
+        }
+      }
+    }
+  }
+
+  // VISIBLE BASE / COKÓŁ FLASHING around the full envelope.
+  // This is a sheet-metal base flashing, not a window sill.
+  const baseRalCode=$('plinthRal')?.value||'7016';
+  const baseFlashMat=new THREE.MeshStandardMaterial({color:ralHex(baseRalCode),metalness:.52,roughness:.28});
+  const baseH=.22;
+  const baseT=.12;
+
+  if((($('plinthMode')?.value||'yes')==='yes')){
+  // Long side base flashings
+  for(const x of [xL-.095,xR+.095]){
+    const b=new THREE.Mesh(new THREE.BoxGeometry(baseT,baseH,L+.18),baseFlashMat);
+    b.position.set(x,baseH/2,z0+L/2);b.castShadow=true;hall.add(b);
+  }
+  // Front/rear gable base flashings
+  for(const z of [z1-.105,z2+.105]){
+    const b=new THREE.Mesh(new THREE.BoxGeometry(W+.18,baseH,baseT),baseFlashMat);
+    b.position.set(0,baseH/2,z);b.castShadow=true;hall.add(b);
+  }
+  }
+
+  // PREMIUM VISIBLE CORNER FLASHINGS — L-shaped sheet-metal profiles, not flat bars.
+  const cornerOn=(($('cornerMode')?.value||'yes')==='yes');
+  const cornerMat3D=new THREE.MeshStandardMaterial({
+    color:ralHex($('cornerRal')?.value||'7016'),metalness:.16,roughness:.50,side:THREE.DoubleSide
+  });
+  if(cornerOn){
+    const leg=.21, thick=.025;
+    for(const x of [xL,xR]){
+      for(const z of [z1,z2]){
+        const sx=x<0?-1:1, sz=z<z0+L/2?-1:1;
+        // one leg wraps the side wall
+        const a=new THREE.Mesh(new THREE.BoxGeometry(thick,H+.06,leg),cornerMat3D);
+        a.position.set(x+sx*.095,(H+.06)/2,z+sz*.095);a.castShadow=true;hall.add(a);
+        // second leg wraps the gable wall
+        const b=new THREE.Mesh(new THREE.BoxGeometry(leg,H+.06,thick),cornerMat3D);
+        b.position.set(x+sx*.095,(H+.06)/2,z+sz*.095);b.castShadow=true;hall.add(b);
+      }
+    }
+  }
+
+  // PREMIUM VERGE / WIND FLASHINGS — follow BOTH roof slopes on front and rear gables.
+  // They project outside the sandwich panel so they remain visible from normal camera distance.
+  const windOn=(($('windMode')?.value||'yes')==='yes');
+  const windMat3D=new THREE.MeshStandardMaterial({
+    color:ralHex($('windRal')?.value||'7016'),metalness:.18,roughness:.48
+  });
+if(windOn){
+    const slopeLen=Math.sqrt((W/2)*(W/2)+rise*rise);
+    const ang=Math.atan2(rise,W/2);
+    for(const z of [z1-.105,z2+.105]){
+      // left verge
+      const wl=new THREE.Mesh(new THREE.BoxGeometry(slopeLen+.13,.090,.115),windMat3D);
+      wl.rotation.z=ang;
+      wl.position.set(-W/4,H+rise/2+.065,z);wl.castShadow=true;hall.add(wl);
+      // right verge
+      const wr=new THREE.Mesh(new THREE.BoxGeometry(slopeLen+.13,.090,.115),windMat3D);
+      wr.rotation.z=-ang;
+      wr.position.set(W/4,H+rise/2+.065,z);wr.castShadow=true;hall.add(wr);
+    }
+  }
+
+  // ROOF = REAL INDIVIDUAL SANDWICH PANELS.
+  // Module is independent from wall panels. Each roof panel gets a real joint/shadow.
+  // BOM rule: +200 mm extension at BOTH longitudinal ends of every roof panel.
+  const roofModule=(parseFloat($('roofModule')?.value)||1000)/1000;
+  const roofEndOverhang=.200; // 200 mm at front + 200 mm at rear
+  const roofJoint=.022;
+  const roofSlopeLen=Math.sqrt((W/2)*(W/2)+rise*rise);
+  const roofPanelLen=roofSlopeLen + 2*roofEndOverhang;
+  const roofAngle=Math.atan2(rise,W/2);
+  const roofJointMat=new THREE.MeshStandardMaterial({color:0x15191c,roughness:.84,metalness:.02});
+
+  // Panels are divided along hall length by their roof-module cover width.
+  let rz=0, roofIndex=0;
+  while(rz<L-.001){
+    const rawCover=Math.min(roofModule,L-rz);
+    const cover=Math.max(.03,rawCover-roofJoint);
+    const zc=z0+rz+rawCover/2;
+
+    // Left roof slope
+    {
+      const panelId=`ROOF_L_${roofIndex}`;
+      const mat=makePanelMaterial(panelOverrides.get(panelId)||$('roofRal').value);
+      const p=new THREE.Mesh(new THREE.BoxGeometry(roofPanelLen,.10,cover),mat);
+      p.rotation.z=roofAngle;
+      p.position.set(-W/4,H+rise/2,zc);
+      p.castShadow=true;p.receiveShadow=true;
+      setPanelMeta(p,{
+        id:panelId,label:`Płyta dachowa L ${roofIndex+1}`,
+        widthMM:Math.round(rawCover*1000),
+        heightMM:Math.round(roofSlopeLen*1000),
+        grossWidthMM:Math.round(rawCover*1000),
+        grossHeightMM:Math.round(roofSlopeLen*1000),
+        purchaseWidthMM:Math.round(rawCover*1000),
+        purchaseHeightMM:Math.round(roofPanelLen*1000),
+        gapMM:Math.round(roofJoint*1000),
+        wasteRule:'BOM: długość połaci + 200 mm z przodu + 200 mm z tyłu'
+      });
+      hall.add(p);
+    }
+
+    // Right roof slope
+    {
+      const panelId=`ROOF_R_${roofIndex}`;
+      const mat=makePanelMaterial(panelOverrides.get(panelId)||$('roofRal').value);
+      const p=new THREE.Mesh(new THREE.BoxGeometry(roofPanelLen,.10,cover),mat);
+      p.rotation.z=-roofAngle;
+      p.position.set(W/4,H+rise/2,zc);
+      p.castShadow=true;p.receiveShadow=true;
+      setPanelMeta(p,{
+        id:panelId,label:`Płyta dachowa P ${roofIndex+1}`,
+        widthMM:Math.round(rawCover*1000),
+        heightMM:Math.round(roofSlopeLen*1000),
+        grossWidthMM:Math.round(rawCover*1000),
+        grossHeightMM:Math.round(roofSlopeLen*1000),
+        purchaseWidthMM:Math.round(rawCover*1000),
+        purchaseHeightMM:Math.round(roofPanelLen*1000),
+        gapMM:Math.round(roofJoint*1000),
+        wasteRule:'BOM: długość połaci + 200 mm z przodu + 200 mm z tyłu'
+      });
+      hall.add(p);
+    }
+
+    if(rz>0){
+      // dark joint strips on both slopes; actual geometry creates visible roof modulation
+      const shL=new THREE.Mesh(new THREE.BoxGeometry(roofSlopeLen,.018,roofJoint),roofJointMat);
+      shL.rotation.z=roofAngle;shL.position.set(-W/4,H+rise/2,z0+rz);shL.castShadow=true;hall.add(shL);
+      const shR=new THREE.Mesh(new THREE.BoxGeometry(roofSlopeLen,.018,roofJoint),roofJointMat);
+      shR.rotation.z=-roofAngle;shR.position.set(W/4,H+rise/2,z0+rz);shR.castShadow=true;hall.add(shR);
+    }
+
+    rz+=rawCover;roofIndex++;
+  }
+
+  // REAL PANEL MODULES: side-wall sandwich panels span from frame axis to frame axis.
+  // The omega profile occurs ONLY at the panel joint, which is the same axis as a main column.
+  const omegaOn=($('omegaMode')?.value||'yes')==='yes';
+  const omegaMat=new THREE.MeshStandardMaterial({color:omegaColor,metalness:.48,roughness:.30});
+  const jointShadowMat=new THREE.MeshStandardMaterial({color:0x171b1e,metalness:.10,roughness:.68});
+
+  // Add subtle vertical shadow at every true panel joint and a raised Ω cover profile.
+  for(let i=1;i<axes.length-1;i++){
+    const z=z0+axes[i];
+    for(const x of [xL-.071,xR+.071]){
+      const shadow=new THREE.Mesh(new THREE.BoxGeometry(.018,H,.075),jointShadowMat);
+      shadow.position.set(x,H/2,z);shadow.castShadow=true;hall.add(shadow);
+      if(omegaOn){
+        // Visual Ω: central raised cap plus two narrow folded returns.
+        const cap=new THREE.Mesh(new THREE.BoxGeometry(.075,H,.15),omegaMat);
+        cap.position.set(x,H/2,z);cap.castShadow=true;hall.add(cap);
+        const lip1=new THREE.Mesh(new THREE.BoxGeometry(.035,H,.045),omegaMat);
+        const lip2=lip1.clone();
+        lip1.position.set(x,H/2,z-.085);lip2.position.set(x,H/2,z+.085);
+        lip1.castShadow=lip2.castShadow=true;hall.add(lip1);hall.add(lip2);
+      }
+    }
+  }
+
+  // REAL GABLE PANEL GRID — no separate triangle objects.
+  // One continuous panel grid covers the full gable and every cell is clipped by the roof slope.
+  // Visual geometry = cut shape. BOM geometry = full uncut rectangular plate before the diagonal cut.
+  const gableLayoutReal=gablePostLayout(W,S);
+  const gAxes=[xL,...gableLayoutReal.positions,xR];
+
+  function roofYAt(x){
+    return H + rise*(1-Math.abs(x)/(W/2));
+  }
+
+  function addGablePanelCell(zz,faceKey,xA,xB,yA,yB,row,col){
+    // Physical gaps on every edge: this is what creates the real shadow, not a painted line.
+    const hGap=.030; // 30 mm physical visual joint: same strong rhythm as side wall
+    const xa=xA, xb=xB;
+    const bottom=Math.max(0,yA+hGap/2);
+    const nominalTop=yB-hGap/2;
+
+    const topA=Math.min(nominalTop,roofYAt(xa));
+    const topB=Math.min(nominalTop,roofYAt(xb));
+    if(topA<=bottom+.004 && topB<=bottom+.004)return;
+
+    const xc=(xa+xb)/2;
+    const shape=new THREE.Shape();
+    shape.moveTo(xa-xc,bottom);
+    shape.lineTo(xb-xc,bottom);
+    shape.lineTo(xb-xc,topB);
+    shape.lineTo(xa-xc,topA);
+    shape.closePath();
+
+    const panelId=`GABLE_${faceKey}_C${col}_R${row}`;
+    const mat=makePanelMaterial(panelOverrides.get(panelId)||$('wallRal').value);
+
+    // Extruded plate gives the gable the same depth/contact shadow as the side-wall plates.
+    const geom=new THREE.ExtrudeGeometry(shape,{
+      depth:.10,
+      bevelEnabled:false,
+      steps:1
+    });
+    geom.translate(0,0,-.05);
+
+    const p=new THREE.Mesh(geom,mat);
+    p.position.set(xc,0,zz);
+    // IMPORTANT: do not mirror the rear gable. Both gables use the same world-X roof profile.
+    // DoubleSide material makes the rear face visible without flipping the cut geometry.
+    p.castShadow=true;
+    p.receiveShadow=true;
+
+    const cutHeight=Math.max(topA,topB)-bottom;
+    const fullHeight=Math.max(.001,yB-yA);
+    const cutByRoof=(topA<yB-.002 || topB<yB-.002);
+    setPanelMeta(p,{
+      id:panelId,
+      label:`Płyta szczytowa ${col+1}.${row+1}`,
+      widthMM:Math.round((xb-xa)*1000),
+      heightMM:Math.round(cutHeight*1000),
+      grossWidthMM:Math.round((xB-xA)*1000),
+      grossHeightMM:Math.round(fullHeight*1000),
+      purchaseWidthMM:Math.round((xB-xA)*1000),
+      purchaseHeightMM:Math.round(fullHeight*1000),
+      gapMM:18,
+      wasteRule:cutByRoof?'Docięta do połaci • BOM liczy pełny prostokąt przed cięciem':'Pełna płyta'
+    });
+    hall.add(p);
+
+    // Contact-shadow lip at the REAL lower edge of every panel course.
+    if(row>0){
+      const lipMat=new THREE.MeshStandardMaterial({color:0x15191c,roughness:.88,metalness:.01});
+      const lipW=Math.max(.01,xb-xa);
+      const lip=new THREE.Mesh(new THREE.BoxGeometry(lipW,.022,.016),lipMat);
+      lip.position.set(xc,bottom-.015,zz + (faceKey==='F'?-.058:.058));
+      lip.castShadow=true;
+      hall.add(lip);
+    }
+  }
+
+  // Recessed dark backing behind the panel grid makes every real joint visible from distance.
+  const gableBackingMat=new THREE.MeshStandardMaterial({color:0x1b2024,roughness:.92,metalness:.02,side:THREE.DoubleSide});
+  for(const zz of [z1,z2]){
+    const rect=new THREE.Mesh(new THREE.PlaneGeometry(W,H),gableBackingMat);
+    rect.position.set(0,H/2,zz + (zz===z1?.008:-.008));
+    hall.add(rect);
+
+    const backingShape=new THREE.Shape();
+    backingShape.moveTo(-W/2,0);
+    backingShape.lineTo(0,rise);
+    backingShape.lineTo(W/2,0);
+    backingShape.closePath();
+    const tri=new THREE.Mesh(new THREE.ShapeGeometry(backingShape),gableBackingMat);
+    tri.position.set(0,H,zz + (zz===z1?.008:-.008));
+    hall.add(tri);
+  }
+
+  for(const zz of [z1-.061,z2+.061]){
+    const faceKey=zz<z0+L/2?'F':'B';
+
+    if(wallDir==='horizontal'){
+      // Horizontal rows continue through the whole gable; the roof merely clips the upper cells.
+      let y=0,row=0;
+      while(y<ridgeY-.001){
+        const yNext=Math.min(y+moduleM,ridgeY);
+        for(let c=0;c<gAxes.length-1;c++){
+          const gapHalf=.015;
+          const xa=gAxes[c]+(c>0?gapHalf:0);
+          const xb=gAxes[c+1]-(c<gAxes.length-2?gapHalf:0);
+          addGablePanelCell(zz,faceKey,xa,xb,y,yNext,row,c);
+        }
+        y=yNext;row++;
+      }
+    }else{
+      // Vertical plate strips, each one clipped directly by the roof slope.
+      let x=xL,col=0;
+      while(x<xR-.001){
+        const xb=Math.min(x+moduleM,xR);
+        const gapHalf=.009;
+        addGablePanelCell(zz,faceKey,x+(x>xL?gapHalf:0),xb-(xb<xR?gapHalf:0),0,ridgeY,0,col);
+        x=xb;col++;
+      }
+    }
+  }
+
+  // Gable divisions now come from the actual gaps between clipped clickable plates.
+
+  // Gable-wall panel joints follow the intermediate gable posts from the structural model.
+  // The omega is therefore exactly where the real supporting post is located.
+  const gableLayout=gablePostLayout(W,S);
+  const frontJointMat=new THREE.MeshStandardMaterial({color:0x202528,roughness:.72,metalness:.04});
+  const gableOmegaMat=new THREE.MeshStandardMaterial({color:omegaColor,metalness:.48,roughness:.30});
+  for(const x of gableLayout.positions){
+    for(const zz of [z1-.075,z2+.075]){
+      const jointH=H + rise*(1-Math.abs(x)/(W/2));
+      const shadow=new THREE.Mesh(new THREE.BoxGeometry(.018,jointH,.075),frontJointMat);
+      shadow.position.set(x,jointH/2,zz);shadow.castShadow=true;hall.add(shadow);
+      if(omegaOn){
+        const cap=new THREE.Mesh(new THREE.BoxGeometry(.075,jointH,.15),gableOmegaMat);
+        cap.position.set(x,jointH/2,zz);cap.castShadow=true;hall.add(cap);
+        const lip1=new THREE.Mesh(new THREE.BoxGeometry(.035,jointH,.045),gableOmegaMat);
+        const lip2=lip1.clone();
+        lip1.position.set(x,jointH/2,zz-.085);lip2.position.set(x,jointH/2,zz+.085);
+        lip1.castShadow=lip2.castShadow=true;hall.add(lip1);hall.add(lip2);
+      }
+    }
+  }
+
+  // Fine panel micro-module remains visible as material profiling, but the MAIN joint/omega
+  // is governed by the structural gable posts above.
+  const panelModule=(parseFloat($('wallModule')?.value)||1000)/1000;
+
+  // Roof seam rhythm along the slope.
+  for(let z=z1+.55;z<z2;z+=.55){
+    for(const side of [-1,1]){
+      const a=new THREE.Vector3(side*W/2,H+.12,z);
+      const b=new THREE.Vector3(0,ridgeY+.12,z);
+      const g=new THREE.BufferGeometry().setFromPoints([a,b]);
+      hall.add(new THREE.Line(g,seamMatRoof));
+    }
+  }
+}
+
+
+function gablePostLayout(W,targetSpacing){
+  const target=Math.max(targetSpacing,1);
+  // Divide the gable width into an integer number of near-equal bays,
+  // keeping each bay close to (and not much larger than) the chosen structural module.
+  const bays=Math.max(2,Math.ceil(W/target));
+  const actual=W/bays;
+  const positions=[];
+  for(let i=1;i<bays;i++) positions.push(-W/2 + i*actual);
+  return {bays,actual,positions};
+}
+
+function build(){
+  clearHall();
+  const W=n('width'),L=n('length'),H=n('eaves'),A=n('angle'),S=Math.max(n('spacing'),.5);
+  const rise=Math.tan(THREE.MathUtils.degToRad(A))*(W/2);
+  const ridge=H+rise;
+  $('ridge').value=ridge.toFixed(2);
+
+  const bays=[0];
+  for(let p=S;p<L-.001;p+=S)bays.push(p);
+  if(Math.abs(bays[bays.length-1]-L)>.001)bays.push(L);
+  const z0=-L/2;
+  const type=$('constructionType').value;
+  const chord=$('trussChord').value;
+
+  bays.forEach(p=>{
+    const z=z0+p;
+    if(type==='truss')trussFrame(z,W,H,rise,chord);
+    else rolledFrame(z,W,H,rise);
+  });
+
+  // Gable-wall intermediate posts. Their spacing is derived from the same structural module,
+  // but balanced across the full hall width so no random narrow bay is left at one edge.
+  const gableLayout=gablePostLayout(W,S);
+  for(const zz of [z0,z0+L]){
+    for(const x of gableLayout.positions){
+      const localRoofY=H + rise*(1-Math.abs(x)/(W/2));
+      iMember([x,0,zz],[x,localRoofY,zz],.34,.22,.055,.045,matSteelDark,'Słupek szczytowy');
+      basePlate(x,zz);
+    }
+  }
+
+  // roof purlins along both slopes
+  const half=W/2;
+  const rows=Math.max(4,Math.round(half/1.6));
+  for(let side=-1;side<=1;side+=2){
+    for(let i=1;i<=rows;i++){
+      const t=i/(rows+1);
+      const x=side*half*(1-t);
+      const y=H+rise*(1-Math.abs(x)/half)+.08;
+      boxMember([x,y,z0],[x,y,z0+L],.055,.14,matSecondary,'Płatew zimnogięta dachowa');
+    }
+  }
+  boxMember([0,ridge+.06,z0],[0,ridge+.06,z0+L],.055,.14,matSecondary,'Płatew kalenicowa');
+
+
+  // side bracing
+  if(bays.length>2){
+    const za=z0+bays[1],zb=z0+bays[2];
+    boxMember([half,.4,za],[half,H-.35,zb],.065,.065,matBlue,'Stężenie ścienne');
+    boxMember([half,.4,zb],[half,H-.35,za],.065,.065,matBlue,'Stężenie ścienne');
+  }
+
+  // roof bracing first bay
+  if(bays.length>2){
+    const za=z0+bays[1],zb=z0+bays[2];
+    boxMember([-half*.55,H+rise*.45,za],[half*.55,H+rise*.45,zb],.055,.055,matBlue,'Stężenie połaciowe');
+    boxMember([half*.55,H+rise*.45,za],[-half*.55,H+rise*.45,zb],.055,.055,matBlue,'Stężenie połaciowe');
+  }
+
+  const last=bays.length>1?bays[bays.length-1]-bays[bays.length-2]:0;
+  const wallArea=2*L*H + 2*W*H + W*rise;
+  const roofArea=2*L*Math.sqrt((W/2)*(W/2)+rise*rise);
+  $('framesOut').textContent=Math.round(wallArea)+' m²';
+  $('spacingOut').textContent=Math.round(roofArea)+' m²';
+  $('lastOut').textContent='RAL '+$('wallRal').value;
+  $('ridgeOut').textContent='RAL '+$('roofRal').value;
+  const gInfo=document.getElementById('gableLayoutInfo');
+  if(gInfo){
+    const gl=gablePostLayout(W,S);
+    gInfo.textContent=`Szczyt: ${gl.bays} pól po ok. ${gl.actual.toFixed(2)} m • ${gl.positions.length} słupków pośrednich • Ω dokładnie na osi słupka.`;
+  }
+
+  if(clientMode){
+    // In the finished-cladding view the steel frame is intentionally completely hidden.
+    // Traverse nested I-section groups as well, not just top-level objects.
+    hall.traverse(obj=>{
+      if(!obj.material) return;
+      if(obj.material===matSteel || obj.material===matSteelDark ||
+         obj.material===matSecondary || obj.material===matBlue ||
+         obj.material===matBolt || obj.material===matConcrete){
+        obj.visible=false;
+      }
+    });
+    addClientShell(W,L,H,rise,z0);
+  }
+
+  // Auto-fit camera according to hall proportions
+  const maxDim=Math.max(W,L,2*H);
+  controls.target.set(0,H*.46,0);
+  camera.position.set(maxDim*.40,Math.max(3.4,H*.56),maxDim*.56);
+  controls.update();
+  if(currentStep===3) setTimeout(rebuildOpeningMarkers,0);
+}
+
+function resize(){
+  const r=$('viewerShell').getBoundingClientRect();
+  renderer.setSize(r.width,r.height,false);
+  camera.aspect=r.width/r.height;camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',resize);
+
+document.querySelectorAll('input,select').forEach(el=>{
+  el.addEventListener('input',build);
+  el.addEventListener('change',build);
+});
+
+window.setCameraView=function(v){
+  const W=n('width'),L=n('length'),H=n('eaves');
+  if(v==='front')camera.position.set(0,H*.8,Math.max(28,W*1.65));
+  else if(v==='side')camera.position.set(Math.max(35,L*.7),H*.75,0);
+  else camera.position.set(Math.max(30,W*.95),H+Math.max(W,L)*.20,Math.max(36,L*.66));
+  controls.target.set(0,H*.55,0);controls.update();
+};
+
+// Raycast selection
+const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
+let selected=null, selectedMat=null;
+renderer.domElement.addEventListener('click',e=>{
+  const r=renderer.domElement.getBoundingClientRect();
+  mouse.x=((e.clientX-r.left)/r.width)*2-1;
+  mouse.y=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const targets=clientMode?claddingSelectable:selectable;
+  const hits=raycaster.intersectObjects(targets,false);
+  const info=document.getElementById('panelInfo');
+  const textInfo=document.getElementById('selectedPanelText');
+
+  if(hits.length && clientMode && hits[0].object.userData.type==='panel'){
+    const p=hits[0].object;
+    const multi=(($('personalizeMode')?.value||'off')==='on');
+
+    if(multi){
+      if(selectedPanels.has(p)){
+        selectedPanels.delete(p);
+        if(p.material?.emissive){
+          p.material.emissive.setHex(0x000000);
+          p.material.emissiveIntensity=0;
+          p.material.needsUpdate=true;
+        }
+      }else{
+        // Clone once so highlighting one plate can never affect another plate.
+        if(p.material?.clone) p.material=p.material.clone();
+        selectedPanels.add(p);
+        if(p.material?.emissive){
+          p.material.emissive.setHex(0x2f78ad);
+          p.material.emissiveIntensity=.38;
+          p.material.needsUpdate=true;
+        }
+      }
+      refreshPanelSelectionUI();
+    }else{
+      restoreSelectedPanel();
+      if(p.material?.clone) p.material=p.material.clone();
+      selectedPanel=p;
+      selectedPanelOriginalMaterial=p.material;
+      if(p.material?.emissive){
+        p.material.emissive.setHex(0x2f78ad);
+        p.material.emissiveIntensity=.38;
+        p.material.needsUpdate=true;
+      }
+      if(textInfo) textInfo.textContent=`Wybrano: ${p.userData.label}`;
+    }
+
+    const d=p.userData;
+    if(info){
+      const bom=(d.purchaseWidthMM&&d.purchaseHeightMM)
+        ? `<br><b>Do BOM:</b> ${d.purchaseWidthMM} × ${d.purchaseHeightMM} mm`
+        : '';
+      info.style.display='block';
+      info.innerHTML=`${d.label}<br><b>Po docięciu:</b> ${d.widthMM} × ${d.heightMM} mm${bom}<br><span style="font-weight:500">${d.gapMM?'Szczelina / luz: '+d.gapMM+' mm<br>':''}${d.wasteRule||''}</span>`;
+    }
+  }else if(info){
+    info.style.display='none';
+  }
+});
+
+
+$('modeSteel').addEventListener('click',()=>{
+  clientMode=false;
+  $('modeSteel').style.background='#0f3d6e';$('modeSteel').style.color='#fff';
+  $('modeClient').style.background='rgba(255,255,255,.94)';$('modeClient').style.color='#17486f';
+  build();
+  setTimeout(rebuildOpeningMarkers,0);
+});
+$('modeClient').addEventListener('click',()=>{
+  clientMode=true;
+  $('modeClient').style.background='#0f3d6e';$('modeClient').style.color='#fff';
+  $('modeSteel').style.background='rgba(255,255,255,.94)';$('modeSteel').style.color='#17486f';
+  build();
+  setTimeout(rebuildOpeningMarkers,0);
+});
+
+
+const applyBtn=document.getElementById('applyPanelRal');
+if(applyBtn){
+  applyBtn.addEventListener('click',()=>{
+    try{
+      if(($('personalizeMode')?.value||'off')!=='on' || !selectedPanels.size) return;
+
+      panelHistory.push(snapshotOverrides());
+      panelRedo.length=0;
+
+      const code=$('panelRal').value;
+      selectedPanels.forEach(p=>{
+        if(!p || !p.userData || p.userData.type!=='panel') return;
+        panelOverrides.set(p.userData.id,code);
+        setPlateColorInPlace(p,code);
+      });
+
+      selectedPanels.clear();
+      refreshPanelSelectionUI();
+
+      const er=document.getElementById('runtimeError');
+      if(er) er.style.display='none';
+    }catch(err){
+      console.error('RAL apply error',err);
+      const er=document.getElementById('runtimeError');
+      if(er){
+        er.textContent='Błąd personalizacji RAL: '+(err?.message||String(err));
+        er.style.display='flex';
+      }
+    }
+  });
+}
+
+document.getElementById('undoPanelRal')?.addEventListener('click',()=>{
+  if(!panelHistory.length)return;
+  panelRedo.push(snapshotOverrides());
+  restoreOverrides(panelHistory.pop());
+});
+document.getElementById('redoPanelRal')?.addEventListener('click',()=>{
+  if(!panelRedo.length)return;
+  panelHistory.push(snapshotOverrides());
+  restoreOverrides(panelRedo.pop());
+});
+document.getElementById('clearPanelSelection')?.addEventListener('click',()=>{
+  selectedPanels.forEach(p=>{
+    if(p?.material?.emissive){
+      p.material.emissive.setHex(0x000000);
+      p.material.emissiveIntensity=0;
+      p.material.needsUpdate=true;
+    }
+  });
+  selectedPanels.clear();
+  refreshPanelSelectionUI();
+});
+
+
+// --- NAVIGACJA 1-5 ---
+const stepTitles={1:['Hala — konstrukcja i geometria','Model hali — konstrukcja 3D','Etap 1: konstrukcja'],2:['Obudowa — ściany i dach','Model hali — obudowa 3D','Etap 2: obudowa'],3:['Otwory — rozmieszczenie','Model hali — otwory 3D','Etap 3: otwory'],4:['Dach i dodatki','Model hali — dach i dodatki','Etap 4: dach i dodatki'],5:['Wycena — kalkulacja projektu','Model hali — podgląd do wyceny','Etap 5: wycena']};
+let currentStep=1;
+function goStep(step){currentStep=step;document.querySelectorAll('.step').forEach(x=>x.classList.toggle('active',Number(x.dataset.step)===step));document.querySelectorAll('.stepPanel').forEach(x=>x.classList.toggle('active',Number(x.dataset.panel)===step));$('leftTitle').textContent=stepTitles[step][0];$('rightTitle').textContent=stepTitles[step][1];$('viewerInfo').textContent=stepTitles[step][2]+' • przeciągnij = obrót • kółko = zoom';clientMode=step!==1;build();if(step===3)setTimeout(rebuildOpeningMarkers,0);if(step===5)setTimeout(calcQuote,0);}
+document.querySelectorAll('.step').forEach(x=>x.addEventListener('click',()=>goStep(Number(x.dataset.step))));document.querySelectorAll('[data-next]').forEach(x=>x.addEventListener('click',()=>goStep(Number(x.dataset.next))));document.querySelectorAll('[data-prev]').forEach(x=>x.addEventListener('click',()=>goStep(Number(x.dataset.prev))));
+
+// --- OTWORY 3D ---
+const openings=[];let activeOpening=-1,openingMeshes=[];
+function clearOpeningMeshes(){openingMeshes.forEach(m=>{m.parent?.remove(m);m.geometry?.dispose?.();m.material?.dispose?.();});openingMeshes=[];}
+function framePositions(){const L=n('length'),S=Math.max(n('spacing'),.5),z0=-L/2,a=[z0];let z=z0;while(z<z0+L-.001){z=Math.min(z+S,z0+L);a.push(z);}return a;}
+function fillBays(){const s=$('sideBay');if(s){s.innerHTML='';const f=framePositions();for(let i=0;i<f.length-1;i++){const o=document.createElement('option');o.value=i;o.textContent=`Pole ${i+1} — oś ${i+1}/${i+2}`;s.appendChild(o);}}const g=$('gableBay');if(g){g.innerHTML='';for(let i=0;i<4;i++){const o=document.createElement('option');o.value=i;o.textContent=`Pole szczytowe ${i+1}`;g.appendChild(o);}}}
+function updateOpeningUI(){const wall=$('openingWall').value,custom=$('openingPlacement').value==='custom',gable=wall==='front'||wall==='back';$('sidePlacementBox').style.display=!custom&&!gable?'block':'none';$('gablePlacementBox').style.display=!custom&&gable?'block':'none';$('customPlacementBox').style.display=custom?'block':'none';$('gableBayBox').style.display=!custom&&gable&&$('gablePosition').value==='bay'?'block':'none';$('windowOptions').style.display=$('openingType').value==='window'?'block':'none';}
+function resolveOffset(){const wall=$('openingWall').value,w=Number($('openingWidth').value)||1000;if($('openingPlacement').value==='custom')return Number($('openingOffset').value)||0;if(wall==='left'||wall==='right'){const f=framePositions(),i=Math.min(f.length-2,Number($('sideBay').value)||0),z0=-n('length')/2;return (((f[i]+f[i+1])/2-z0)*1000-w/2);}const W=n('width')*1000;if($('gablePosition').value==='center')return (W-w)/2;const i=Number($('gableBay').value)||0,bayW=W/4;return i*bayW+(bayW-w)/2;}
+function rebuildOpeningMarkers(){clearOpeningMeshes();if(!clientMode)return;const W=n('width'),L=n('length'),z0=-L/2;openings.forEach((o,i)=>{const w=o.w/1000,h=o.h/1000,off=o.offset/1000,sill=o.sill/1000,mat=new THREE.MeshStandardMaterial({color:i===activeOpening?0xff9f1c:0x2493d1,transparent:true,opacity:.68,roughness:.4});let m;if(o.wall==='front'||o.wall==='back'){m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.12),mat);m.position.set(-W/2+off+w/2,sill+h/2,o.wall==='front'?z0-.2:z0+L+.2);}else{m=new THREE.Mesh(new THREE.BoxGeometry(.12,h,w),mat);m.position.set(o.wall==='left'?-W/2-.2:W/2+.2,sill+h/2,z0+off+w/2);}hall.add(m);openingMeshes.push(m);});}
+function renderOpenings(){const list=$('openingList');if(!list)return;list.innerHTML=openings.length?'':'<div class="note">Nie dodano jeszcze żadnych otworów.</div>';openings.forEach((o,i)=>{const b=document.createElement('button');b.className='navbtn secondary';b.style.textAlign='left';b.textContent=`${i+1}. ${o.type} • ${o.w}×${o.h} mm • ${o.wall}`;b.onclick=()=>{activeOpening=i;renderOpenings();};list.appendChild(b);});rebuildOpeningMarkers();}
+$('addOpening')?.addEventListener('click',()=>{const type=$('openingType').value,wall=$('openingWall').value,w=Math.max(100,Number($('openingWidth').value)||100),h=Math.max(100,Number($('openingHeight').value)||100),offset=Math.max(0,resolveOffset()),sill=type==='window'?Math.max(0,Number($('windowSill').value)||0):($('openingPlacement').value==='custom'?Math.max(0,Number($('openingSill').value)||0):0);openings.push({type,wall,w,h,offset,sill});activeOpening=openings.length-1;renderOpenings();});
+$('duplicateOpening')?.addEventListener('click',()=>{if(activeOpening<0)return;openings.push({...openings[activeOpening]});activeOpening=openings.length-1;renderOpenings();});$('deleteOpening')?.addEventListener('click',()=>{if(activeOpening<0)return;openings.splice(activeOpening,1);activeOpening=Math.min(activeOpening,openings.length-1);renderOpenings();});['openingWall','openingPlacement','gablePosition','openingType'].forEach(id=>$(id)?.addEventListener('change',updateOpeningUI));fillBays();updateOpeningUI();renderOpenings();
+
+resize();goStep(1);
+(function animate(){
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene,camera);
+})();
+
+// --- ETAP 5: wycena jednostkowa ---
+const quoteRevisions=[];
+function money(v){return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN',maximumFractionDigits:0}).format(v||0);}
+function num(id){return Math.max(0,Number($(id)?.value)||0);}
+function syncPanelAreasFromModel(){
+  // Source of truth = individual panel purchase formats stored on generated meshes.
+  // Wall panels include side walls + both gables. Roof panels are separate.
+  let wallM2=0,roofM2=0,wallCount=0,roofCount=0;
+  const seen=new Set();
+
+  (typeof claddingSelectable!=='undefined'?claddingSelectable:[]).forEach(p=>{
+    const d=p?.userData;
+    if(!d || d.type!=='panel' || !d.id || seen.has(d.id)) return;
+    seen.add(d.id);
+
+    const w=Number(d.purchaseWidthMM || d.widthMM || 0);
+    const h=Number(d.purchaseHeightMM || d.heightMM || 0);
+    if(w<=0 || h<=0) return;
+
+    const area=(w*h)/1e6;
+    if(String(d.id).startsWith('ROOF_')){
+      roofM2+=area;roofCount++;
+    }else{
+      wallM2+=area;wallCount++;
+    }
+  });
+
+  // If the model has not exposed purchase formats yet, calculate from the same
+  // panel-module logic rather than using arbitrary hard-coded quantities.
+  if(wallCount===0){
+    const W=num('width')||20,L=num('length')||50,H=num('eaves')||6;
+    const rise=(W/2)*Math.tan((num('angle')||10)*Math.PI/180);
+    const module=(num('wallModule')||1000)/1000;
+    // horizontal wall panels: purchase strips, with gable rows charged at full strip width.
+    const sideRows=Math.ceil(H/module);
+    wallM2 += 2*sideRows*module*L;
+    const gableRows=Math.ceil((H+rise)/module);
+    for(let r=0;r<gableRows;r++){
+      const y0=r*module, y1=Math.min((r+1)*module,H+rise);
+      const stripH=y1-y0;
+      if(y0 < H) wallM2 += 2*W*stripH;
+      else{
+        // Width available in triangular gable at the bottom of this strip;
+        // charged as full purchase rectangle before the roof-slope cut.
+        const yy=Math.min(y0-H,rise);
+        const widthAtY=Math.max(0,W*(1-yy/rise));
+        wallM2 += 2*widthAtY*stripH;
+      }
+    }
+  }
+
+  if(roofCount===0){
+    const W=num('width')||20,L=num('length')||50;
+    const rise=(W/2)*Math.tan((num('angle')||10)*Math.PI/180);
+    const slope=Math.sqrt((W/2)*(W/2)+rise*rise);
+    // Roof purchase length includes +200 mm at both eaves / ends of each roof panel run.
+    const purchaseSlope=slope+0.40;
+    roofM2=2*purchaseSlope*L;
+  }
+
+  if($('qtyWallM2')) $('qtyWallM2').value=wallM2.toFixed(2);
+  if($('qtyRoofM2')) $('qtyRoofM2').value=roofM2.toFixed(2);
+  return {wallM2,roofM2,wallCount,roofCount};
+}
+
+function calcQuote(){
+  syncPanelAreasFromModel();
+  const lines=[
+    {name:'Stal główna',qty:num('qtySteelKg'),unit:'kg',price:num('priceSteelKg')},
+    {name:'Zetowniki / płatwie',qty:num('qtyZKg'),unit:'kg',price:num('priceZKg')},
+    {name:'Płyta ścienna',qty:num('qtyWallM2'),unit:'m²',price:num('priceWallM2')},
+    {name:'Płyta dachowa',qty:num('qtyRoofM2'),unit:'m²',price:num('priceRoofM2')},
+    {name:'Obróbki',qty:num('qtyTrimMb'),unit:'mb',price:num('priceTrimMb')},
+    {name:'Montaż',qty:num('qtyAssemblyKg'),unit:'kg',price:num('priceAssemblyKg')}
+  ];
+  const variableCost=lines.reduce((s,l)=>s+l.qty*l.price,0);
+  const fixed=[
+    ['Transport',num('costTransport')],
+    ['Otwory / stolarka',num('costOpenings')],
+    ['Łączniki / uszczelki / akcesoria',num('costAccessories')],
+    ['Pozostałe',num('costOther')]
+  ];
+  const fixedCost=fixed.reduce((s,x)=>s+x[1],0);
+  const cost=variableCost+fixedCost;
+
+  const box=$('pricingLines');
+  if(box)box.innerHTML=
+    lines.map(l=>`<div style="display:grid;grid-template-columns:1.5fr .8fr .8fr 1fr;gap:6px;border-bottom:1px solid #e1e7ec;padding:5px 0;font-size:12px"><span><b>${l.name}</b></span><span>${l.qty.toLocaleString('pl-PL')} ${l.unit}</span><span>${l.price.toLocaleString('pl-PL')} zł/${l.unit}</span><b style="text-align:right">${money(l.qty*l.price)}</b></div>`).join('')+
+    fixed.map(x=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid #e1e7ec;padding:5px 0;font-size:12px"><span>${x[0]}</span><b>${money(x[1])}</b></div>`).join('');
+
+  const margin=num('marginPct');
+  const discount=Math.min(100,num('discountPct'));
+  const vat=num('vatPct');
+  const beforeDiscount=cost*(1+margin/100);
+  const net=beforeDiscount*(1-discount/100);
+  const vatValue=net*vat/100;
+  const gross=net+vatValue;
+  const profit=net-cost;
+
+  const sum=$('pricingSummary');
+  if(sum)sum.innerHTML=`
+    <div style="display:flex;justify-content:space-between"><span>Koszt materiałów i usług</span><b>${money(cost)}</b></div>
+    <div style="display:flex;justify-content:space-between"><span>Cena przed rabatem</span><b>${money(beforeDiscount)}</b></div>
+    <div style="display:flex;justify-content:space-between"><span>Cena netto po rabacie</span><b>${money(net)}</b></div>
+    <div style="display:flex;justify-content:space-between"><span>Zysk</span><b>${money(profit)}</b></div>
+    <div style="display:flex;justify-content:space-between"><span>VAT ${vat}%</span><b>${money(vatValue)}</b></div>
+    <div style="display:flex;justify-content:space-between;border-top:1px solid #cbd8e2;padding-top:8px;font-size:17px"><span><b>Cena brutto</b></span><b>${money(gross)}</b></div>`;
+  return {cost,margin,discount,vat,net,gross,profit};
+}
+[
+'qtySteelKg','priceSteelKg','qtyZKg','priceZKg','qtyWallM2','priceWallM2','qtyRoofM2','priceRoofM2',
+'qtyTrimMb','priceTrimMb','qtyAssemblyKg','priceAssemblyKg','costTransport','costOpenings','costAccessories',
+'costOther','marginPct','discountPct','vatPct'
+].forEach(id=>{$(id)?.addEventListener('input',calcQuote);$(id)?.addEventListener('change',calcQuote);});
+
+$('saveQuoteRevision')?.addEventListener('click',()=>{
+  const q=calcQuote();quoteRevisions.push({...q,date:new Date()});
+  const box=$('quoteRevisions');
+  box.innerHTML=quoteRevisions.map((r,i)=>`<div style="padding:6px 0;border-bottom:1px solid #dde5eb"><b>R${i+1}</b> — koszt ${money(r.cost)} • netto ${money(r.net)} • brutto ${money(r.gross)}</div>`).join('');
+});
+$('exportQuote')?.addEventListener('click',()=>alert('Eksport podepniemy po automatycznym połączeniu wyceny z BOM-em.'));
+calcQuote();
+})();
+</script>
+</body>
+</html>
