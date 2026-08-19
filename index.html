@@ -586,102 +586,907 @@ function addClientShell(W,L,H,rise,z0){
         for(const zz of [z1-.066,z2+.066]){
           const rib=new THREE.Mesh(new THREE.BoxGeometry(halfAtY*2,.012,.012),gRibMat);
           rib.position.set(0,y,zz);rib.castShadow=true;hall.add(rib);
-              const rect=new THREE.Mesh(new THREE.PlaneGeometry(W,H),gableBackingMat);
-    rect.position.set(0,H/2,zz + (zz===z1?.008:-.008));
+                  }
+      }
+    }else{
+      for(let x=xL+.07;x<xR-.03;x+=.075){
+        const topY=H+rise*(1-Math.abs(x)/(W/2));
+        for(const zz of [z1-.066,z2+.066]){
+          const rib=new THREE.Mesh(new THREE.BoxGeometry(.012,topY,.012),gRibMat);
+          rib.position.set(x,topY/2,zz);rib.castShadow=true;hall.add(rib);
+        }
+      }
+    }
+  }
+
+  // VISIBLE BASE / COKÓŁ FLASHING around the full envelope.
+  const baseRalCode=$('plinthRal')?.value||'7016';
+  const baseFlashMat=new THREE.MeshStandardMaterial({
+    color:ralHex(baseRalCode),
+    metalness:.52,
+    roughness:.28
+  });
+
+  const baseH=.22;
+  const baseT=.12;
+
+  if((($('plinthMode')?.value||'yes')==='yes')){
+
+    for(const x of [xL-.095,xR+.095]){
+      const b=new THREE.Mesh(
+        new THREE.BoxGeometry(baseT,baseH,L+.18),
+        baseFlashMat
+      );
+
+      b.position.set(
+        x,
+        baseH/2,
+        z0+L/2
+      );
+
+      b.castShadow=true;
+      hall.add(b);
+    }
+
+    for(const z of [z1-.095,z2+.095]){
+      const b=new THREE.Mesh(
+        new THREE.BoxGeometry(W+.18,baseH,baseT),
+        baseFlashMat
+      );
+
+      b.position.set(
+        0,
+        baseH/2,
+        z
+      );
+
+      b.castShadow=true;
+      hall.add(b);
+    }
+  }
+
+  // PREMIUM VISIBLE CORNER FLASHINGS
+  const cornerOn=(($('cornerMode')?.value||'yes')==='yes');
+
+  const cornerMat3D=new THREE.MeshStandardMaterial({
+    color:ralHex($('cornerRal')?.value||'7016'),
+    metalness:.16,
+    roughness:.50,
+    side:THREE.DoubleSide
+  });
+
+  if(cornerOn){
+    const leg=.21;
+    const thick=.025;
+
+    for(const x of [xL,xR]){
+      for(const z of [z1,z2]){
+        const sx=x<0?-1:1;
+        const sz=z<z0+L/2?-1:1;
+
+        const a=new THREE.Mesh(
+          new THREE.BoxGeometry(
+            thick,
+            H+.06,
+            leg
+          ),
+          cornerMat3D
+        );
+
+        a.position.set(
+          x+sx*.095,
+          (H+.06)/2,
+          z+sz*.095
+        );
+
+        a.castShadow=true;
+        hall.add(a);
+
+        const b=new THREE.Mesh(
+          new THREE.BoxGeometry(
+            leg,
+            H+.06,
+            thick
+          ),
+          cornerMat3D
+        );
+
+        b.position.set(
+          x+sx*.095,
+          (H+.06)/2,
+          z+sz*.095
+        );
+
+        b.castShadow=true;
+        hall.add(b);
+      }
+    }
+  }
+
+  // PREMIUM VERGE / WIND FLASHINGS
+  const windOn=(($('windMode')?.value||'yes')==='yes');
+
+  const windMat3D=new THREE.MeshStandardMaterial({
+    color:ralHex($('windRal')?.value||'7016'),
+    metalness:.18,
+    roughness:.48
+  });
+
+  if(windOn){
+    const slopeLen=Math.sqrt(
+      (W/2)*(W/2)+
+      rise*rise
+    );
+
+    const ang=Math.atan2(
+      rise,
+      W/2
+    );
+
+    for(const z of [z1-.105,z2+.105]){
+
+      const wl=new THREE.Mesh(
+        new THREE.BoxGeometry(
+          slopeLen+.13,
+          .090,
+          .115
+        ),
+        windMat3D
+      );
+
+      wl.rotation.z=ang;
+
+      wl.position.set(
+        -W/4,
+        H+rise/2+.065,
+        z
+      );
+
+      wl.castShadow=true;
+      hall.add(wl);
+
+      const wr=new THREE.Mesh(
+        new THREE.BoxGeometry(
+          slopeLen+.13,
+          .090,
+          .115
+        ),
+        windMat3D
+      );
+
+      wr.rotation.z=-ang;
+
+      wr.position.set(
+        W/4,
+        H+rise/2+.065,
+        z
+      );
+
+      wr.castShadow=true;
+      hall.add(wr);
+    }
+  }
+
+  // ROOF = REAL INDIVIDUAL SANDWICH PANELS.
+  const roofModule=
+    (parseFloat($('roofModule')?.value)||1000)/1000;
+
+  const roofEndOverhang=.200;
+  const roofJoint=.022;
+
+  const roofSlopeLen=
+    Math.sqrt(
+      (W/2)*(W/2)+
+      rise*rise
+    );
+
+  const roofPanelLen=
+    roofSlopeLen+
+    2*roofEndOverhang;
+
+  const roofAngle=
+    Math.atan2(
+      rise,
+      W/2
+    );
+
+  const roofJointMat=
+    new THREE.MeshStandardMaterial({
+      color:0x15191c,
+      roughness:.84,
+      metalness:.02
+    });
+
+  let rz=0;
+  let roofIndex=0;
+
+  while(rz<L-.001){
+
+    const rawCover=
+      Math.min(
+        roofModule,
+        L-rz
+      );
+
+    const cover=
+      Math.max(
+        .03,
+        rawCover-roofJoint
+      );
+
+    const zc=
+      z0+
+      rz+
+      rawCover/2;
+
+    {
+      const panelId=
+        `ROOF_L_${roofIndex}`;
+
+      const mat=
+        makePanelMaterial(
+          panelOverrides.get(panelId)||
+          $('roofRal').value
+        );
+
+      const p=
+        new THREE.Mesh(
+          new THREE.BoxGeometry(
+            roofPanelLen,
+            .10,
+            cover
+          ),
+          mat
+        );
+
+      p.rotation.z=
+        roofAngle;
+
+      p.position.set(
+        -W/4,
+        H+rise/2,
+        zc
+      );
+
+      p.castShadow=true;
+      p.receiveShadow=true;
+
+      setPanelMeta(p,{
+        id:panelId,
+        label:`Płyta dachowa L ${roofIndex+1}`,
+        widthMM:Math.round(rawCover*1000),
+        heightMM:Math.round(roofSlopeLen*1000),
+        grossWidthMM:Math.round(rawCover*1000),
+        grossHeightMM:Math.round(roofSlopeLen*1000),
+        purchaseWidthMM:Math.round(rawCover*1000),
+        purchaseHeightMM:Math.round(roofPanelLen*1000),
+        gapMM:Math.round(roofJoint*1000),
+        wasteRule:
+          'BOM: długość połaci + 200 mm z przodu + 200 mm z tyłu'
+      });
+
+      hall.add(p);
+    }
+
+    {
+      const panelId=
+        `ROOF_R_${roofIndex}`;
+
+      const mat=
+        makePanelMaterial(
+          panelOverrides.get(panelId)||
+          $('roofRal').value
+        );
+
+      const p=
+        new THREE.Mesh(
+          new THREE.BoxGeometry(
+            roofPanelLen,
+            .10,
+            cover
+          ),
+          mat
+        );
+
+      p.rotation.z=
+        -roofAngle;
+
+      p.position.set(
+        W/4,
+        H+rise/2,
+        zc
+      );
+
+      p.castShadow=true;
+      p.receiveShadow=true;
+
+      setPanelMeta(p,{
+        id:panelId,
+        label:`Płyta dachowa P ${roofIndex+1}`,
+        widthMM:Math.round(rawCover*1000),
+        heightMM:Math.round(roofSlopeLen*1000),
+        grossWidthMM:Math.round(rawCover*1000),
+        grossHeightMM:Math.round(roofSlopeLen*1000),
+        purchaseWidthMM:Math.round(rawCover*1000),
+        purchaseHeightMM:Math.round(roofPanelLen*1000),
+        gapMM:Math.round(roofJoint*1000),
+        wasteRule:
+          'BOM: długość połaci + 200 mm z przodu + 200 mm z tyłu'
+      });
+
+      hall.add(p);
+    }
+
+    if(rz>0){
+
+      const shL=new THREE.Mesh(
+        new THREE.BoxGeometry(
+          roofSlopeLen,
+          .018,
+          roofJoint
+        ),
+        roofJointMat
+      );
+
+      shL.rotation.z=
+        roofAngle;
+
+      shL.position.set(
+        -W/4,
+        H+rise/2,
+        z0+rz
+      );
+
+      shL.castShadow=true;
+      hall.add(shL);
+
+      const shR=new THREE.Mesh(
+        new THREE.BoxGeometry(
+          roofSlopeLen,
+          .018,
+          roofJoint
+        ),
+        roofJointMat
+      );
+
+      shR.rotation.z=
+        -roofAngle;
+
+      shR.position.set(
+        W/4,
+        H+rise/2,
+        z0+rz
+      );
+
+      shR.castShadow=true;
+      hall.add(shR);
+    }
+
+    rz+=rawCover;
+    roofIndex++;
+  }
+
+  // REAL GABLE PANEL GRID
+  const gableLayoutReal=
+    gablePostLayout(
+      W,
+      S
+    );
+
+  const gAxes=[
+    xL,
+    ...gableLayoutReal.positions,
+    xR
+  ];
+
+  function roofYAt(x){
+    return H+
+      rise*
+      (
+        1-
+        Math.abs(x)/(W/2)
+      );
+  }
+
+  function addGablePanelCell(
+    zz,
+    faceKey,
+    xA,
+    xB,
+    yA,
+    yB,
+    row,
+    col
+  ){
+
+    const hGap=.030;
+    const xa=xA;
+    const xb=xB;
+
+    const bottom=
+      Math.max(
+        0,
+        yA+hGap/2
+      );
+
+    const nominalTop=
+      yB-hGap/2;
+
+    const topA=
+      Math.min(
+        nominalTop,
+        roofYAt(xa)
+      );
+
+    const topB=
+      Math.min(
+        nominalTop,
+        roofYAt(xb)
+      );
+
+    if(
+      topA<=bottom+.004 &&
+      topB<=bottom+.004
+    ){
+      return;
+    }
+
+    const xc=
+      (xa+xb)/2;
+
+    const shape=
+      new THREE.Shape();
+
+    shape.moveTo(
+      xa-xc,
+      bottom
+    );
+
+    shape.lineTo(
+      xb-xc,
+      bottom
+    );
+
+    shape.lineTo(
+      xb-xc,
+      topB
+    );
+
+    shape.lineTo(
+      xa-xc,
+      topA
+    );
+
+    shape.closePath();
+
+    const panelId=
+      `GABLE_${faceKey}_C${col}_R${row}`;
+
+    const mat=
+      makePanelMaterial(
+        panelOverrides.get(panelId)||
+        $('wallRal').value
+      );
+
+    const geom=
+      new THREE.ExtrudeGeometry(
+        shape,
+        {
+          depth:.10,
+          bevelEnabled:false,
+          steps:1
+        }
+      );
+
+    geom.translate(
+      0,
+      0,
+      -.05
+    );
+
+    const p=
+      new THREE.Mesh(
+        geom,
+        mat
+      );
+
+    p.position.set(
+      xc,
+      0,
+      zz
+    );
+
+    p.castShadow=true;
+    p.receiveShadow=true;
+
+    const cutHeight=
+      Math.max(
+        topA,
+        topB
+      )-
+      bottom;
+
+    const fullHeight=
+      Math.max(
+        .001,
+        yB-yA
+      );
+
+    const cutByRoof=
+      (
+        topA<yB-.002 ||
+        topB<yB-.002
+      );
+
+    setPanelMeta(p,{
+      id:panelId,
+      label:
+        `Płyta szczytowa ${col+1}.${row+1}`,
+      widthMM:
+        Math.round(
+          (xb-xa)*1000
+        ),
+      heightMM:
+        Math.round(
+          cutHeight*1000
+        ),
+      grossWidthMM:
+        Math.round(
+          (xB-xA)*1000
+        ),
+      grossHeightMM:
+        Math.round(
+          fullHeight*1000
+        ),
+      purchaseWidthMM:
+        Math.round(
+          (xB-xA)*1000
+        ),
+      purchaseHeightMM:
+        Math.round(
+          fullHeight*1000
+        ),
+      gapMM:18,
+      wasteRule:
+        cutByRoof
+        ? 'Docięta do połaci • BOM liczy pełny prostokąt przed cięciem'
+        : 'Pełna płyta'
+    });
+
+    hall.add(p);
+
+    if(row>0){
+
+      const lipMat=
+        new THREE.MeshStandardMaterial({
+          color:0x15191c,
+          roughness:.88,
+          metalness:.01
+        });
+
+      const lipW=
+        Math.max(
+          .01,
+          xb-xa
+        );
+
+      const lip=
+        new THREE.Mesh(
+          new THREE.BoxGeometry(
+            lipW,
+            .022,
+            .016
+          ),
+          lipMat
+        );
+
+      lip.position.set(
+        xc,
+        bottom-.015,
+        zz+
+        (
+          faceKey==='F'
+          ? -.058
+          : .058
+        )
+      );
+
+      lip.castShadow=true;
+      hall.add(lip);
+    }
+  }
+
+  const gableBackingMat=
+    new THREE.MeshStandardMaterial({
+      color:0x1b2024,
+      roughness:.92,
+      metalness:.02,
+      side:THREE.DoubleSide
+    });
+
+  for(const zz of [z1,z2]){
+
+    const rect=
+      new THREE.Mesh(
+        new THREE.PlaneGeometry(
+          W,
+          H
+        ),
+        gableBackingMat
+      );
+
+    rect.position.set(
+      0,
+      H/2,
+      zz+
+      (
+        zz===z1
+        ? .008
+        : -.008
+      )
+    );
+
     hall.add(rect);
 
-    const backingShape=new THREE.Shape();
-    backingShape.moveTo(-W/2,0);
-    backingShape.lineTo(0,rise);
-    backingShape.lineTo(W/2,0);
+    const backingShape=
+      new THREE.Shape();
+
+    backingShape.moveTo(
+      -W/2,
+      0
+    );
+
+    backingShape.lineTo(
+      0,
+      rise
+    );
+
+    backingShape.lineTo(
+      W/2,
+      0
+    );
+
     backingShape.closePath();
-    const tri=new THREE.Mesh(new THREE.ShapeGeometry(backingShape),gableBackingMat);
-    tri.position.set(0,H,zz + (zz===z1?.008:-.008));
+
+    const tri=
+      new THREE.Mesh(
+        new THREE.ShapeGeometry(
+          backingShape
+        ),
+        gableBackingMat
+      );
+
+    tri.position.set(
+      0,
+      H,
+      zz+
+      (
+        zz===z1
+        ? .008
+        : -.008
+      )
+    );
+
     hall.add(tri);
   }
 
-  for(const zz of [z1-.061,z2+.061]){
-    const faceKey=zz<z0+L/2?'F':'B';
+  for(
+    const zz of [
+      z1-.061,
+      z2+.061
+    ]
+  ){
 
-    if(wallDir==='horizontal'){
-      let y=0,row=0;
-      while(y<ridgeY-.001){
-        const yNext=Math.min(y+moduleM,ridgeY);
-        for(let c=0;c<gAxes.length-1;c++){
+    const faceKey=
+      zz<z0+L/2
+      ? 'F'
+      : 'B';
+
+    if(
+      wallDir==='horizontal'
+    ){
+
+      let y=0;
+      let row=0;
+
+      while(
+        y<ridgeY-.001
+      ){
+
+        const yNext=
+          Math.min(
+            y+moduleM,
+            ridgeY
+          );
+
+        for(
+          let c=0;
+          c<gAxes.length-1;
+          c++
+        ){
+
           const gapHalf=.015;
-          const xa=gAxes[c]+(c>0?gapHalf:0);
-          const xb=gAxes[c+1]-(c<gAxes.length-2?gapHalf:0);
-          addGablePanelCell(zz,faceKey,xa,xb,y,yNext,row,c);
+
+          const xa=
+            gAxes[c]+
+            (
+              c>0
+              ? gapHalf
+              : 0
+            );
+
+          const xb=
+            gAxes[c+1]-
+            (
+              c<gAxes.length-2
+              ? gapHalf
+              : 0
+            );
+
+          addGablePanelCell(
+            zz,
+            faceKey,
+            xa,
+            xb,
+            y,
+            yNext,
+            row,
+            c
+          );
         }
+
         y=yNext;
         row++;
       }
+
     }else{
-      let x=xL,col=0;
-      while(x<xR-.001){
-        const xb=Math.min(x+moduleM,xR);
+
+      let x=xL;
+      let col=0;
+
+      while(
+        x<xR-.001
+      ){
+
+        const xb=
+          Math.min(
+            x+moduleM,
+            xR
+          );
+
         const gapHalf=.009;
+
         addGablePanelCell(
           zz,
           faceKey,
-          x+(x>xL?gapHalf:0),
-          xb-(xb<xR?gapHalf:0),
+          x+
+          (
+            x>xL
+            ? gapHalf
+            : 0
+          ),
+          xb-
+          (
+            xb<xR
+            ? gapHalf
+            : 0
+          ),
           0,
           ridgeY,
           0,
           col
         );
+
         x=xb;
         col++;
       }
     }
   }
 
-  const gableLayout=gablePostLayout(W,S);
-  const frontJointMat=new THREE.MeshStandardMaterial({
-    color:0x202528,
-    roughness:.72,
-    metalness:.04
-  });
+  const gableLayout=
+    gablePostLayout(
+      W,
+      S
+    );
 
-  const gableOmegaMat=new THREE.MeshStandardMaterial({
-    color:omegaColor,
-    metalness:.48,
-    roughness:.30
-  });
+  const frontJointMat=
+    new THREE.MeshStandardMaterial({
+      color:0x202528,
+      roughness:.72,
+      metalness:.04
+    });
 
-  for(const x of gableLayout.positions){
-    for(const zz of [z1-.075,z2+.075]){
-      const jointH=H + rise*(1-Math.abs(x)/(W/2));
+  const gableOmegaMat=
+    new THREE.MeshStandardMaterial({
+      color:omegaColor,
+      metalness:.48,
+      roughness:.30
+    });
 
-      const shadow=new THREE.Mesh(
-        new THREE.BoxGeometry(.018,jointH,.075),
-        frontJointMat
+  for(
+    const x of
+    gableLayout.positions
+  ){
+
+    for(
+      const zz of [
+        z1-.075,
+        z2+.075
+      ]
+    ){
+
+      const jointH=
+        H+
+        rise*
+        (
+          1-
+          Math.abs(x)/(W/2)
+        );
+
+      const shadow=
+        new THREE.Mesh(
+          new THREE.BoxGeometry(
+            .018,
+            jointH,
+            .075
+          ),
+          frontJointMat
+        );
+
+      shadow.position.set(
+        x,
+        jointH/2,
+        zz
       );
 
-      shadow.position.set(x,jointH/2,zz);
       shadow.castShadow=true;
       hall.add(shadow);
 
       if(omegaOn){
-        const cap=new THREE.Mesh(
-          new THREE.BoxGeometry(.075,jointH,.15),
-          gableOmegaMat
+
+        const cap=
+          new THREE.Mesh(
+            new THREE.BoxGeometry(
+              .075,
+              jointH,
+              .15
+            ),
+            gableOmegaMat
+          );
+
+        cap.position.set(
+          x,
+          jointH/2,
+          zz
         );
 
-        cap.position.set(x,jointH/2,zz);
         cap.castShadow=true;
         hall.add(cap);
 
-        const lip1=new THREE.Mesh(
-          new THREE.BoxGeometry(.035,jointH,.045),
-          gableOmegaMat
+        const lip1=
+          new THREE.Mesh(
+            new THREE.BoxGeometry(
+              .035,
+              jointH,
+              .045
+            ),
+            gableOmegaMat
+          );
+
+        const lip2=
+          lip1.clone();
+
+        lip1.position.set(
+          x,
+          jointH/2,
+          zz-.085
         );
 
-        const lip2=lip1.clone();
-
-        lip1.position.set(x,jointH/2,zz-.085);
-        lip2.position.set(x,jointH/2,zz+.085);
+        lip2.position.set(
+          x,
+          jointH/2,
+          zz+.085
+        );
 
         lip1.castShadow=true;
         lip2.castShadow=true;
@@ -692,14 +1497,35 @@ function addClientShell(W,L,H,rise,z0){
     }
   }
 
-  const panelModule=(parseFloat($('wallModule')?.value)||1000)/1000;
+  for(
+    let z=z1+.55;
+    z<z2;
+    z+=.55
+  ){
 
-  for(let z=z1+.55;z<z2;z+=.55){
-    for(const side of [-1,1]){
-      const a=new THREE.Vector3(side*W/2,H+.12,z);
-      const b=new THREE.Vector3(0,ridgeY+.12,z);
+    for(
+      const side of [-1,1]
+    ){
 
-      const g=new THREE.BufferGeometry().setFromPoints([a,b]);
+      const a=
+        new THREE.Vector3(
+          side*W/2,
+          H+.12,
+          z
+        );
+
+      const b=
+        new THREE.Vector3(
+          0,
+          ridgeY+.12,
+          z
+        );
+
+      const g=
+        new THREE.BufferGeometry()
+        .setFromPoints(
+          [a,b]
+        );
 
       hall.add(
         new THREE.Line(
@@ -711,15 +1537,38 @@ function addClientShell(W,L,H,rise,z0){
   }
 }
 
-function gablePostLayout(W,targetSpacing){
-  const target=Math.max(targetSpacing,1);
-  const bays=Math.max(2,Math.ceil(W/target));
-  const actual=W/bays;
+function gablePostLayout(
+  W,
+  targetSpacing
+){
+
+  const target=
+    Math.max(
+      targetSpacing,
+      1
+    );
+
+  const bays=
+    Math.max(
+      2,
+      Math.ceil(
+        W/target
+      )
+    );
+
+  const actual=
+    W/bays;
+
   const positions=[];
 
-  for(let i=1;i<bays;i++){
+  for(
+    let i=1;
+    i<bays;
+    i++
+  ){
     positions.push(
-      -W/2 + i*actual
+      -W/2+
+      i*actual
     );
   }
 
@@ -731,39 +1580,54 @@ function gablePostLayout(W,targetSpacing){
 }
 
 function build(){
+
   clearHall();
 
   const W=n('width');
   const L=n('length');
   const H=n('eaves');
   const A=n('angle');
-  const S=Math.max(n('spacing'),.5);
+  const S=Math.max(
+    n('spacing'),
+    .5
+  );
 
   const rise=
     Math.tan(
-      THREE.MathUtils.degToRad(A)
-    )*(W/2);
+      THREE.MathUtils
+      .degToRad(A)
+    )*
+    (W/2);
 
-  const ridge=H+rise;
+  const ridge=
+    H+rise;
 
   $('ridge').value=
     ridge.toFixed(2);
 
   const bays=[0];
 
-  for(let p=S;p<L-.001;p+=S){
+  for(
+    let p=S;
+    p<L-.001;
+    p+=S
+  ){
     bays.push(p);
   }
 
   if(
     Math.abs(
-      bays[bays.length-1]-L
+      bays[
+        bays.length-1
+      ]-
+      L
     )>.001
   ){
     bays.push(L);
   }
 
-  const z0=-L/2;
+  const z0=
+    -L/2;
 
   const type=
     $('constructionType').value;
@@ -772,9 +1636,13 @@ function build(){
     $('trussChord').value;
 
   bays.forEach(p=>{
-    const z=z0+p;
 
-    if(type==='truss'){
+    const z=
+      z0+p;
+
+    if(
+      type==='truss'
+    ){
       trussFrame(
         z,
         W,
@@ -793,12 +1661,25 @@ function build(){
   });
 
   const gableLayout=
-    gablePostLayout(W,S);
+    gablePostLayout(
+      W,
+      S
+    );
 
-  for(const zz of [z0,z0+L]){
-    for(const x of gableLayout.positions){
+  for(
+    const zz of [
+      z0,
+      z0+L
+    ]
+  ){
+
+    for(
+      const x of
+      gableLayout.positions
+    ){
+
       const localRoofY=
-        H +
+        H+
         rise*
         (
           1-
@@ -816,11 +1697,15 @@ function build(){
         'Słupek szczytowy'
       );
 
-      basePlate(x,zz);
+      basePlate(
+        x,
+        zz
+      );
     }
   }
 
-  const half=W/2;
+  const half=
+    W/2;
 
   const rows=
     Math.max(
@@ -835,11 +1720,13 @@ function build(){
     side<=1;
     side+=2
   ){
+
     for(
       let i=1;
       i<=rows;
       i++
     ){
+
       const t=
         i/(rows+1);
 
@@ -877,12 +1764,17 @@ function build(){
     'Płatew kalenicowa'
   );
 
-  if(bays.length>2){
+  if(
+    bays.length>2
+  ){
+
     const za=
-      z0+bays[1];
+      z0+
+      bays[1];
 
     const zb=
-      z0+bays[2];
+      z0+
+      bays[2];
 
     boxMember(
       [half,.4,za],
@@ -903,16 +1795,29 @@ function build(){
     );
   }
 
-  if(bays.length>2){
+  if(
+    bays.length>2
+  ){
+
     const za=
-      z0+bays[1];
+      z0+
+      bays[1];
 
     const zb=
-      z0+bays[2];
+      z0+
+      bays[2];
 
     boxMember(
-      [-half*.55,H+rise*.45,za],
-      [half*.55,H+rise*.45,zb],
+      [
+        -half*.55,
+        H+rise*.45,
+        za
+      ],
+      [
+        half*.55,
+        H+rise*.45,
+        zb
+      ],
       .055,
       .055,
       matBlue,
@@ -920,8 +1825,16 @@ function build(){
     );
 
     boxMember(
-      [half*.55,H+rise*.45,za],
-      [-half*.55,H+rise*.45,zb],
+      [
+        half*.55,
+        H+rise*.45,
+        za
+      ],
+      [
+        -half*.55,
+        H+rise*.45,
+        zb
+      ],
       .055,
       .055,
       matBlue,
@@ -930,8 +1843,8 @@ function build(){
   }
 
   const wallArea=
-    2*L*H +
-    2*W*H +
+    2*L*H+
+    2*W*H+
     W*rise;
 
   const roofArea=
@@ -943,20 +1856,32 @@ function build(){
     );
 
   $('framesOut').textContent=
-    Math.round(wallArea)+' m²';
+    Math.round(
+      wallArea
+    )+
+    ' m²';
 
   $('spacingOut').textContent=
-    Math.round(roofArea)+' m²';
+    Math.round(
+      roofArea
+    )+
+    ' m²';
 
   $('lastOut').textContent=
-    'RAL '+$('wallRal').value;
+    'RAL '+
+    $('wallRal').value;
 
   $('ridgeOut').textContent=
-    'RAL '+$('roofRal').value;
+    'RAL '+
+    $('roofRal').value;
 
   if(clientMode){
+
     hall.traverse(obj=>{
-      if(!obj.material){
+
+      if(
+        !obj.material
+      ){
         return;
       }
 
@@ -996,7 +1921,10 @@ function build(){
 
   camera.position.set(
     maxDim*.40,
-    Math.max(3.4,H*.56),
+    Math.max(
+      3.4,
+      H*.56
+    ),
     maxDim*.56
   );
 
@@ -1004,6 +1932,7 @@ function build(){
 }
 
 function resize(){
+
   const r=
     $('viewerShell')
     .getBoundingClientRect();
@@ -1043,28 +1972,51 @@ document
 
 });
 
-window.setCameraView=function(v){
+window.setCameraView=
+function(v){
+
   const W=n('width');
   const L=n('length');
   const H=n('eaves');
 
   if(v==='front'){
+
     camera.position.set(
       0,
       H*.8,
-      Math.max(28,W*1.65)
+      Math.max(
+        28,
+        W*1.65
+      )
     );
+
   }else if(v==='side'){
+
     camera.position.set(
-      Math.max(35,L*.7),
+      Math.max(
+        35,
+        L*.7
+      ),
       H*.75,
       0
     );
+
   }else{
+
     camera.position.set(
-      Math.max(30,W*.95),
-      H+Math.max(W,L)*.20,
-      Math.max(36,L*.66)
+      Math.max(
+        30,
+        W*.95
+      ),
+      H+
+      Math.max(
+        W,
+        L
+      )*.20,
+      Math.max(
+        36,
+        L*.66
+      )
     );
   }
 
@@ -1115,7 +2067,8 @@ renderer.domElement
       : selectable;
 
     const hits=
-      raycaster.intersectObjects(
+      raycaster
+      .intersectObjects(
         targets,
         false
       );
@@ -1133,8 +2086,10 @@ renderer.domElement
     if(
       hits.length &&
       clientMode &&
-      hits[0].object.userData.type==='panel'
+      hits[0].object
+      .userData.type==='panel'
     ){
+
       const p=
         hits[0].object;
 
@@ -1147,19 +2102,26 @@ renderer.domElement
       if(multi){
 
         if(
-          selectedPanels.has(p)
+          selectedPanels
+          .has(p)
         ){
-          selectedPanels.delete(p);
+
+          selectedPanels
+          .delete(p);
 
           if(
             p.material?.emissive
           ){
-            p.material.emissive.setHex(
+            p.material.emissive
+            .setHex(
               0x000000
             );
 
-            p.material.emissiveIntensity=0;
-            p.material.needsUpdate=true;
+            p.material
+            .emissiveIntensity=0;
+
+            p.material
+            .needsUpdate=true;
           }
 
         }else{
@@ -1176,14 +2138,17 @@ renderer.domElement
           if(
             p.material?.emissive
           ){
-            p.material.emissive.setHex(
+            p.material.emissive
+            .setHex(
               0x2f78ad
             );
 
-            p.material.emissiveIntensity=.38;
-            p.material.needsUpdate=true;
-          }
+            p.material
+            .emissiveIntensity=.38;
 
+            p.material
+            .needsUpdate=true;
+          }
         }
 
         refreshPanelSelectionUI();
@@ -1207,12 +2172,16 @@ renderer.domElement
         if(
           p.material?.emissive
         ){
-          p.material.emissive.setHex(
+          p.material.emissive
+          .setHex(
             0x2f78ad
           );
 
-          p.material.emissiveIntensity=.38;
-          p.material.needsUpdate=true;
+          p.material
+          .emissiveIntensity=.38;
+
+          p.material
+          .needsUpdate=true;
         }
 
         if(textInfo){
@@ -1231,10 +2200,13 @@ renderer.domElement
             d.purchaseWidthMM &&
             d.purchaseHeightMM
           )
-          ? `<br><b>Do BOM:</b> ${d.purchaseWidthMM} × ${d.purchaseHeightMM} mm`
-          : '';
+          ?
+          `<br><b>Do BOM:</b> ${d.purchaseWidthMM} × ${d.purchaseHeightMM} mm`
+          :
+          '';
 
-        info.style.display='block';
+        info.style.display=
+          'block';
 
         info.innerHTML=
           `${d.label}
@@ -1246,15 +2218,21 @@ renderer.domElement
           <span style="font-weight:500">
           ${
             d.gapMM
-            ? 'Szczelina / luz: '+d.gapMM+' mm<br>'
-            : ''
+            ?
+            'Szczelina / luz: '+
+            d.gapMM+
+            ' mm<br>'
+            :
+            ''
           }
           ${d.wasteRule||''}
           </span>`;
       }
 
     }else if(info){
-      info.style.display='none';
+
+      info.style.display=
+        'none';
     }
   }
 );
@@ -1266,16 +2244,20 @@ $('modeSteel')
 
     clientMode=false;
 
-    $('modeSteel').style.background=
+    $('modeSteel')
+    .style.background=
       '#0f3d6e';
 
-    $('modeSteel').style.color=
+    $('modeSteel')
+    .style.color=
       '#fff';
 
-    $('modeClient').style.background=
+    $('modeClient')
+    .style.background=
       'rgba(255,255,255,.94)';
 
-    $('modeClient').style.color=
+    $('modeClient')
+    .style.color=
       '#17486f';
 
     build();
@@ -1289,16 +2271,20 @@ $('modeClient')
 
     clientMode=true;
 
-    $('modeClient').style.background=
+    $('modeClient')
+    .style.background=
       '#0f3d6e';
 
-    $('modeClient').style.color=
+    $('modeClient')
+    .style.color=
       '#fff';
 
-    $('modeSteel').style.background=
+    $('modeSteel')
+    .style.background=
       'rgba(255,255,255,.94)';
 
-    $('modeSteel').style.color=
+    $('modeSteel')
+    .style.color=
       '#17486f';
 
     build();
@@ -1306,13 +2292,15 @@ $('modeClient')
 );
 
 const applyBtn=
-  document.getElementById(
+  document
+  .getElementById(
     'applyPanelRal'
   );
 
 if(applyBtn){
 
-  applyBtn.addEventListener(
+  applyBtn
+  .addEventListener(
     'click',
     ()=>{
 
@@ -1337,7 +2325,8 @@ if(applyBtn){
         const code=
           $('panelRal').value;
 
-        selectedPanels.forEach(p=>{
+        selectedPanels
+        .forEach(p=>{
 
           if(
             !p ||
@@ -1356,7 +2345,6 @@ if(applyBtn){
             p,
             code
           );
-
         });
 
         selectedPanels.clear();
@@ -1364,12 +2352,14 @@ if(applyBtn){
         refreshPanelSelectionUI();
 
         const er=
-          document.getElementById(
+          document
+          .getElementById(
             'runtimeError'
           );
 
         if(er){
-          er.style.display='none';
+          er.style.display=
+            'none';
         }
 
       }catch(err){
@@ -1380,7 +2370,8 @@ if(applyBtn){
         );
 
         const er=
-          document.getElementById(
+          document
+          .getElementById(
             'runtimeError'
           );
 
@@ -1393,8 +2384,8 @@ if(applyBtn){
               String(err)
             );
 
-          er.style.display='flex';
-
+          er.style.display=
+            'flex';
         }
       }
     }
@@ -1409,7 +2400,9 @@ document
   'click',
   ()=>{
 
-    if(!panelHistory.length){
+    if(
+      !panelHistory.length
+    ){
       return;
     }
 
@@ -1431,7 +2424,9 @@ document
   'click',
   ()=>{
 
-    if(!panelRedo.length){
+    if(
+      !panelRedo.length
+    ){
       return;
     }
 
@@ -1453,26 +2448,28 @@ document
   'click',
   ()=>{
 
-    selectedPanels.forEach(p=>{
+    selectedPanels
+    .forEach(p=>{
 
       if(
         p?.material?.emissive
       ){
 
-        p.material.emissive.setHex(
+        p.material.emissive
+        .setHex(
           0x000000
         );
 
-        p.material.emissiveIntensity=0;
-        p.material.needsUpdate=true;
+        p.material
+        .emissiveIntensity=0;
 
+        p.material
+        .needsUpdate=true;
       }
     });
 
     selectedPanels.clear();
-
     refreshPanelSelectionUI();
-
   }
 );
 
@@ -1494,6 +2491,8 @@ build();
 
 })();
 
+// ETAP 5 — WYCENA
+
 const quoteRevisions=[];
 
 function money(v){
@@ -1505,8 +2504,9 @@ function money(v){
       currency:'PLN',
       maximumFractionDigits:0
     }
-  ).format(v||0);
-
+  ).format(
+    v||0
+  );
 }
 
 function num(id){
@@ -1517,7 +2517,6 @@ function num(id){
       $(id)?.value
     )||0
   );
-
 }
 
 function syncPanelAreasFromModel(){
@@ -1533,8 +2532,10 @@ function syncPanelAreasFromModel(){
 
   (
     typeof claddingSelectable!=='undefined'
-    ? claddingSelectable
-    : []
+    ?
+    claddingSelectable
+    :
+    []
   )
   .forEach(p=>{
 
@@ -1550,7 +2551,9 @@ function syncPanelAreasFromModel(){
       return;
     }
 
-    seen.add(d.id);
+    seen.add(
+      d.id
+    );
 
     const w=
       Number(
@@ -1574,7 +2577,8 @@ function syncPanelAreasFromModel(){
     }
 
     const area=
-      (w*h)/1000000;
+      (w*h)/
+      1000000;
 
     if(
       String(d.id)
@@ -1584,14 +2588,17 @@ function syncPanelAreasFromModel(){
     ){
       roofM2+=area;
       roofCount++;
+
     }else{
+
       wallM2+=area;
       wallCount++;
     }
-
   });
 
-  if(wallCount===0){
+  if(
+    wallCount===0
+  ){
 
     const W=
       num('width')||20;
@@ -1615,14 +2622,15 @@ function syncPanelAreasFromModel(){
       (
         num('wallModule')||
         1000
-      )/1000;
+      )/
+      1000;
 
     const sideRows=
       Math.ceil(
         H/module
       );
 
-    wallM2 +=
+    wallM2+=
       2*
       sideRows*
       module*
@@ -1652,9 +2660,11 @@ function syncPanelAreasFromModel(){
       const stripH=
         y1-y0;
 
-      if(y0<H){
+      if(
+        y0<H
+      ){
 
-        wallM2 +=
+        wallM2+=
           2*
           W*
           stripH;
@@ -1677,16 +2687,17 @@ function syncPanelAreasFromModel(){
             )
           );
 
-        wallM2 +=
+        wallM2+=
           2*
           widthAtY*
           stripH;
-
       }
     }
   }
 
-  if(roofCount===0){
+  if(
+    roofCount===0
+  ){
 
     const W=
       num('width')||20;
@@ -1717,20 +2728,23 @@ function syncPanelAreasFromModel(){
       2*
       purchaseSlope*
       L;
-
   }
 
   if(
     $('qtyWallM2')
   ){
-    $('qtyWallM2').value=
+
+    $('qtyWallM2')
+    .value=
       wallM2.toFixed(2);
   }
 
   if(
     $('qtyRoofM2')
   ){
-    $('qtyRoofM2').value=
+
+    $('qtyRoofM2')
+    .value=
       roofM2.toFixed(2);
   }
 
@@ -1848,7 +2862,6 @@ function calcQuote(){
           <b>${money(x[1])}</b>
         </div>`
       ).join('');
-
   }
 
   const margin=
@@ -1925,7 +2938,6 @@ function calcQuote(){
         <b>${money(gross)}</b>
       </div>
     `;
-
   }
 
   return {
@@ -1962,16 +2974,17 @@ function calcQuote(){
 ]
 .forEach(id=>{
 
-  $(id)?.addEventListener(
+  $(id)
+  ?.addEventListener(
     'input',
     calcQuote
   );
 
-  $(id)?.addEventListener(
+  $(id)
+  ?.addEventListener(
     'change',
     calcQuote
   );
-
 });
 
 $('saveQuoteRevision')
@@ -2002,7 +3015,6 @@ $('saveQuoteRevision')
         </div>`
       )
       .join('');
-
   }
 );
 
@@ -2014,7 +3026,6 @@ $('exportQuote')
     alert(
       'Eksport podepniemy po automatycznym połączeniu wyceny z BOM-em.'
     );
-
   }
 );
 
